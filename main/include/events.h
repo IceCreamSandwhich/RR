@@ -17,6 +17,7 @@ typedef struct rr_state_t {
     bool leader;
     bool imu_enabled;
     bool led_enabled;
+    bool radio_enabled;
 } rr_state_t;
 
 extern rr_state_t state;

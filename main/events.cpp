@@ -63,6 +63,9 @@ void rr_os_service(void *pvParameter)
 
 void launch_rr_os_service()
 {
+    ESP_LOGI(TAG, "Launching rr_os_service");
+    initialise_events();
+    // Create the task that will handle events
     BaseType_t status;
     status = xTaskCreate(
         rr_os_service,
