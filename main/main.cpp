@@ -57,21 +57,21 @@ extern "C" void app_main(void)
 void initialise_radio()
 {
     // CLK, MISO, MOSI, CS
-    RadioLibCustomHAL hal = RadioLibCustomHAL(1, 2, 3, 5);
-    // CS, G0, RST
-    SX1278 radio = new Module(&hal, 5, 7, 4);
-    int status = radio.begin();
-    if (status == RADIOLIB_ERR_NONE)
-    {
-        ESP_LOGI("Radio", "Radio initialised successfully");
-    }
-    else
-    {
-        ESP_LOGE("Radio", "Radio failed to initialise");
-    }
+    // RadioLibCustomHAL hal = RadioLibCustomHAL(1, 2, 3, 5);
+    // // CS, G0, RST
+    // SX1278 radio = new Module(&hal, 5, 7, 4);
+    // int status = radio.begin();
+    // if (status == RADIOLIB_ERR_NONE)
+    // {
+    //     ESP_LOGI("Radio", "Radio initialised successfully");
+    // }
+    // else
+    // {
+    //     ESP_LOGE("Radio", "Radio failed to initialise");
+    // }
 
-    radio.setFrequency(433.0);
-    radio.setSpreadingFactor(12);
+    //radio.setFrequency(433.0);
+    //radio.setSpreadingFactor(12);
 }
 
 void initialise(rr_state_t state)
