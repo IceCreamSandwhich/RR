@@ -10,5 +10,5 @@
 #define ENCODER_B 6
 
 void IRAM_ATTR encoder_isr_handler(void *arg);
-void init_encoder(void);
+void init_encoder(int is_left, gpio_num_t pin_a, gpio_num_t pin_b);
 void encoder_task();

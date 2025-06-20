@@ -26,6 +26,9 @@
 #include "include/events.h"
 #include "RadioLibCustomHAL.hpp"
 
+#define LEFT_ENCODER_A (gpio_num_t) 1
+#define LEFT_ENCODER_B (gpio_num_t) 2
+
 static const constexpr char *TAG = "Main";
 
 void initialise(rr_state_t state); 
@@ -41,7 +44,7 @@ extern "C" void app_main(void)
     // Creating events queue
     // state.connected = true;
     // state.twai_active = false;
-    state.imu_enabled = true;
+    // state.imu_enabled = true;
     // state.led_enabled = true;
     state.encoder_enabled = true;
 
@@ -79,7 +82,8 @@ void initialise(rr_state_t state)
     // {
     //     //initialise_radio();
     // }
-    if (state.imu_enabled)
+    
+    /*if (state.imu_enabled)
     {
         init_imu();
         ESP_LOGI(
@@ -88,6 +92,7 @@ void initialise(rr_state_t state)
         imu_service();
         ESP_LOGI(TAG, "Imu service started");
     }
+    */
 
     // if (state.led_enabled)
     // {
@@ -98,7 +103,8 @@ void initialise(rr_state_t state)
 
     if (state.encoder_enabled)
     {
-        init_encoder();
+        init_encoder(true, LEFT_ENCODER_A, LEFT_ENCODER_B);
+        // init_encoder(false, RIGHT_ENCODER_A, RIGHT_ENCODER_B);
         encoder_task();
     }
 
