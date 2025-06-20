@@ -83,7 +83,8 @@ void initialise(rr_state_t state)
     //     //initialise_radio();
     // }
     
-    /*if (state.imu_enabled)
+    /*
+    if (state.imu_enabled)
     {
         init_imu();
         ESP_LOGI(
