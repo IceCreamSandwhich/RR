@@ -26,8 +26,6 @@
 #include "include/events.h"
 #include "RadioLibCustomHAL.hpp"
 
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-
 static const constexpr char *TAG = "Main";
 
 void initialise(rr_state_t state); 
@@ -41,9 +39,9 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Starting app_main");
 
     // Creating events queue
-    // state.connected = false;
+    // state.connected = true;
     // state.twai_active = false;
-    state.imu_enabled = false;
+    // state.imu_enabled = true;
     // state.led_enabled = true;
 
     // // Initialising peripherals
@@ -51,7 +49,7 @@ extern "C" void app_main(void)
     while (1)
     {
         // Wait for events to be added to the queue
-        rr_os_event_handler();
+        // rr_os_event_handler();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -83,7 +81,11 @@ void initialise(rr_state_t state)
     if (state.imu_enabled)
     {
         init_imu();
+        ESP_LOGI(
+            TAG, "Starting IMU service"
+        );
         imu_service();
+        ESP_LOGI(TAG, "Imu service started");
     }
 
     if (state.led_enabled)
@@ -94,5 +96,5 @@ void initialise(rr_state_t state)
     }
 
     // initialise_drivetrain();
-    launch_rr_os_service();
+    // launch_rr_os_service();
 }
