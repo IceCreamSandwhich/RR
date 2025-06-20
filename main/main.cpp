@@ -39,10 +39,11 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Starting app_main");
 
     // Creating events queue
-    state.connected = true;
+    // state.connected = true;
     // state.twai_active = false;
-    // state.imu_enabled = true;
+    state.imu_enabled = true;
     // state.led_enabled = true;
+    state.encoder_enabled = true;
 
     // // Initialising peripherals
     initialise(state);
@@ -74,10 +75,10 @@ extern "C" void app_main(void)
 
 void initialise(rr_state_t state)
 {
-    if (state.radio_enabled)
-    {
-        //initialise_radio();
-    }
+    // if (state.radio_enabled)
+    // {
+    //     //initialise_radio();
+    // }
     if (state.imu_enabled)
     {
         init_imu();
@@ -88,13 +89,19 @@ void initialise(rr_state_t state)
         ESP_LOGI(TAG, "Imu service started");
     }
 
-    if (state.led_enabled)
+    // if (state.led_enabled)
+    // {
+    //     initialise_led();
+    //     set_led_color(INDEPENDENT_COLOR);
+    //     twai_interrupt_init();
+    // }
+
+    if (state.encoder_enabled)
     {
-        initialise_led();
-        set_led_color(INDEPENDENT_COLOR);
-        twai_interrupt_init();
+        init_encoder();
+        encoder_task();
     }
 
-    // initialise_drivetrain();
-    // launch_rr_os_service();
+    initialise_drivetrain();
+    launch_rr_os_service();
 }

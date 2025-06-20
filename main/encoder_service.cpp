@@ -92,7 +92,7 @@ void IRAM_ATTR encoder_isr_handler(void *arg)
     xQueueSendFromISR(encoder_queue, &position, NULL);
 }
 
-void encoder_task(void *arg)
+void encoder_task()
 {
     int position;
     while (1)

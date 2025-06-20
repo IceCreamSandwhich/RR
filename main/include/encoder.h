@@ -10,6 +10,5 @@
 #define ENCODER_B 6
 
 void IRAM_ATTR encoder_isr_handler(void *arg);
-
-void setup_encoder(void);
-void encoder_task(void *arg);
+void init_encoder(void);
+void encoder_task();
