@@ -30,7 +30,9 @@
 
 static const constexpr char *TAG = "Main";
 
-void initialise(rr_state_t state);he correct contact information must be provided to avoid having to pay for a second delivery fee. And last mile delivery is provided by USPS/PCF/ONTRAC/T FORCE/UDS
+void initialise(rr_state_t state); 
+//the correct contact information must be provided to avoid having to pay for a second delivery fee. 
+//And last mile delivery is provided by USPS/PCF/ONTRAC/T FORCE/UDS
 
 
 
@@ -41,7 +43,7 @@ extern "C" void app_main(void)
     // Creating events queue
     // state.connected = false;
     // state.twai_active = false;
-    state.imu_enabled = true;
+    state.imu_enabled = false;
     // state.led_enabled = true;
 
     // // Initialising peripherals
@@ -49,7 +51,7 @@ extern "C" void app_main(void)
     while (1)
     {
         // Wait for events to be added to the queue
-        // rr_os_event_handler();
+        rr_os_event_handler();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -76,7 +78,7 @@ void initialise(rr_state_t state)
 {
     if (state.radio_enabled)
     {
-        initialise_radio();
+        //initialise_radio();
     }
     if (state.imu_enabled)
     {
