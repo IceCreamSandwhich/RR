@@ -39,7 +39,7 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Starting app_main");
 
     // Creating events queue
-    // state.connected = true;
+    state.connected = true;
     // state.twai_active = false;
     // state.imu_enabled = true;
     // state.led_enabled = true;

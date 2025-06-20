@@ -6,14 +6,12 @@ typedef struct encoder_t {
     volatile int lastEncoding;
     gpio_num_t pin_a;
     gpio_num_t pin_b;
-    QueueHandle_t encoder_queue;
-    const char* label;
-
 } encoder_t;
 
-static encoder_t left_encoder = {0, 0b00, (gpio_num_t)0, (gpio_num_t)0, NULL, "Left"};
-static encoder_t right_encoder = {0, 0b00, (gpio_num_t)0,(gpio_num_t)0, NULL, "Right"};
+static encoder_t left_encoder = {0, 0b00, (gpio_num_t)0, (gpio_num_t)0};
+static encoder_t right_encoder = {0, 0b00, (gpio_num_t)0,(gpio_num_t)0};
 
+QueueHandle_t encoder_queue;
 
 void init_encoder(int is_left, gpio_num_t pin_a, gpio_num_t pin_b)
 {
