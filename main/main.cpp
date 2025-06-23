@@ -44,9 +44,9 @@ extern "C" void app_main(void)
     // Creating events queue
     // state.connected = true;
     // state.twai_active = false;
-    // state.imu_enabled = true;
+    state.imu_enabled = true;
     // state.led_enabled = true;
-    state.encoder_enabled = true;
+    state.encoder_enabled = false;
 
     // // Initialising peripherals
     initialise(state);
@@ -83,7 +83,7 @@ void initialise(rr_state_t state)
     //     //initialise_radio();
     // }
     
-    /*
+    
     if (state.imu_enabled)
     {
         init_imu();
@@ -93,7 +93,7 @@ void initialise(rr_state_t state)
         imu_service();
         ESP_LOGI(TAG, "Imu service started");
     }
-    */
+    
 
     // if (state.led_enabled)
     // {
@@ -109,6 +109,6 @@ void initialise(rr_state_t state)
         encoder_task();
     }
 
-    initialise_drivetrain();
+    // initialise_drivetrain();
     launch_rr_os_service();
 }
