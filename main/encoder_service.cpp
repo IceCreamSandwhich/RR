@@ -99,6 +99,7 @@ void encoder_task()
     {
         // xQueueReceive(encoder_queue, &position, portMAX_DELAY);
         position = left_encoder.position; // For testing, use left encoder position
-        printf("Encoder Position: %d\n", position);
+        printf("Left Encoder Position: %d\n", position);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }

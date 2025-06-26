@@ -26,10 +26,10 @@
 #include "include/events.h"
 #include "RadioLibCustomHAL.hpp"
 
-#define LEFT_ENCODER_A (gpio_num_t) 1
+#define LEFT_ENCODER_A (gpio_num_t) 4
 #define LEFT_ENCODER_B (gpio_num_t) 5
-// #define RIGHT_ENCODER_A (gpio_num_t) 3
-// #define RIGHT_ENCODER_B (gpio_num_t) 4
+// #define RIGHT_ENCODER_A (gpio_num_t) 7
+// #define RIGHT_ENCODER_B (gpio_num_t) 8
 
 static const constexpr char *TAG = "Main";
 
@@ -46,16 +46,17 @@ extern "C" void app_main(void)
     // Creating events queue
     // state.connected = true;
     // state.twai_active = false;
-    state.imu_enabled = true;
+    state.imu_enabled = false;
     // state.led_enabled = true;
-    state.encoder_enabled = false;
+    state.encoder_enabled = true;
 
     // // Initialising peripherals
     initialise(state);
     
     while (1)
     {
-        // Wait for events to be added to the queue
+        // Wait for events to be added to the queue        vTaskDelay(2000 / portTICK_PERIOD_MS);
+
         // rr_os_event_handler();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
@@ -101,19 +102,20 @@ void initialise(rr_state_t state)
 
     /* if (state.led_enabled)
      {
-         initialise_led();
-         set_led_color(INDEPENDENT_COLOR);
-         twai_interrupt_init();
+        initialise_led();
+        set_led_color(INDEPENDENT_COLOR);
+        twai_interrupt_init();
      }
     */
 
     if (state.encoder_enabled)
     {
+        ESP_LOGI(TAG, "Encoder Service Starting");
         init_encoder(true, LEFT_ENCODER_A, LEFT_ENCODER_B);
         //init_encoder(false, RIGHT_ENCODER_A, RIGHT_ENCODER_B);
         encoder_task();
     }
 
-    //initialise_drivetrain();
+    initialise_drivetrain();
     launch_rr_os_service();
 }
