@@ -6,9 +6,20 @@
 #include "freertos/queue.h"
 #include "driver/gpio.h"
 
-#define ENCODER_A 5
-#define ENCODER_B 6
+typedef struct encoder_t {
+    volatile int position;
+    volatile int lastEncoding;
+    gpio_num_t pin_a;
+    gpio_num_t pin_b;
+} encoder_t;
 
-void IRAM_ATTR encoder_isr_handler(void *arg);
-void init_encoder(int is_left, gpio_num_t pin_a, gpio_num_t pin_b);
-void encoder_task();
+
+#define LEFT_ENCODER_A GPIO_NUM_10
+#define LEFT_ENCODER_B GPIO_NUM_9
+
+#define CPR 12 * 250
+
+// void IRAM_ATTR encoder_isr_handler(void *arg);
+void init_encoder(encoder_t* encoder);
+void encoder_task(void* pvParameter);
+BaseType_t encoder_service(void);

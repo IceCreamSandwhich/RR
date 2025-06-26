@@ -1,105 +1,101 @@
 #include "include/encoder.h"
+#include "esp_log.h"
+#include "rom/ets_sys.h"
+#include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-
-typedef struct encoder_t {
-    volatile int position;
-    volatile int lastEncoding;
-    gpio_num_t pin_a;
-    gpio_num_t pin_b;
-} encoder_t;
-
-static encoder_t left_encoder = {0, 0b00, (gpio_num_t)0, (gpio_num_t)0};
-static encoder_t right_encoder = {0, 0b00, (gpio_num_t)0,(gpio_num_t)0};
+#define TAG "ENCODER_SERVICE"
 
 QueueHandle_t encoder_queue;
 
-void init_encoder(int is_left, gpio_num_t pin_a, gpio_num_t pin_b)
-{
-    encoder_t encoder = {0, 0b00, pin_a, pin_b};
-    if (is_left)
-    {
-        encoder = left_encoder;
-    }
-    else
-    {
-        encoder = right_encoder;
-    }
-    encoder.pin_a = pin_a;
-    encoder.pin_b = pin_b;
-    encoder.position = 0;
-    encoder.lastEncoding = 0b00;
-
-    // Set the encoder pins from the configuration
-    gpio_set_direction((gpio_num_t)pin_a, GPIO_MODE_INPUT);
-    gpio_set_direction((gpio_num_t)pin_b, GPIO_MODE_INPUT);
-    // Set up the encoder pins
-    gpio_config_t ioconf;
-    ioconf.intr_type = GPIO_INTR_ANYEDGE;
-    ioconf.mode = GPIO_MODE_INPUT;
-    ioconf.pin_bit_mask = (1ULL << pin_a) | (1ULL << pin_b);
-    ioconf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    ioconf.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpio_config(&ioconf);
-
-    // Set up the interrupt
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(pin_a, encoder_isr_handler, (void *)&encoder);
-    gpio_isr_handler_add(pin_b, encoder_isr_handler, (void *)&encoder);
-
-    // Initialize the queue
-    encoder_queue = xQueueCreate(10, sizeof(int));
-    if (encoder_queue == NULL)
-    {
-        printf("Failed to create encoder queue\n");
-        return;
-    }
-}
-
-void IRAM_ATTR encoder_isr_handler(void *arg)
+// ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
+static void IRAM_ATTR encoder_isr_handler(void *arg)
 {
     encoder_t *encoder = (encoder_t *)arg;
-    gpio_num_t pin_a = encoder->pin_a;
-    gpio_num_t pin_b = encoder->pin_b;
-    int lastEncoding = encoder->lastEncoding;
-    int position = encoder->position;
-    int a_val = gpio_get_level(pin_a);
-    int b_val = gpio_get_level(pin_b);
+
+    int a_val = gpio_get_level(encoder->pin_a);
+    int b_val = gpio_get_level(encoder->pin_b);
     int encoding = (a_val << 1) | b_val;
 
+    // Determine direction based on last state
     if (encoding == 0b00)
     {
-        if (lastEncoding == 0b01)
+        if (encoder->lastEncoding == 0b01)
         {
-            position++;
+            encoder->position++;
         }
-        else if (lastEncoding == 0b10)
+        else if (encoder->lastEncoding == 0b10)
         {
-            position--;
+            encoder->position--;
         }
     }
     else if (encoding == 0b11)
     {
-        if (lastEncoding == 0b10)
+        if (encoder->lastEncoding == 0b10)
         {
-            position++;
+            encoder->position++;
         }
-        else if (lastEncoding == 0b01)
+        else if (encoder->lastEncoding == 0b01)
         {
-            position--;
+            encoder->position--;
         }
     }
 
-    xQueueSendFromISR(encoder_queue, &position, NULL);
+    encoder->lastEncoding = encoding;
 }
 
-void encoder_task()
+void init_encoder(encoder_t* encoder)
 {
-    int position;
+    ESP_LOGI(TAG, "Setting up pins %d and %d", encoder->pin_a, encoder->pin_b);
+
+    // Configure input pins
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (1ULL << encoder->pin_a) | (1ULL << encoder->pin_b);
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpio_config(&io_conf);
+
+    // Initialize encoder state
+    encoder->position = 0;
+    encoder->lastEncoding = (gpio_get_level(encoder->pin_a) << 1) | gpio_get_level(encoder->pin_b);
+
+    // Enable interrupt service if not already done globally
+    gpio_install_isr_service(0);  // Only needs to be called once in app
+    gpio_isr_handler_add(encoder->pin_a, encoder_isr_handler, (void *)encoder);
+    gpio_isr_handler_add(encoder->pin_b, encoder_isr_handler, (void *)encoder);
+}
+
+void encoder_task(void* pvParameter)
+{
+    encoder_t *encoder = (encoder_t *)pvParameter;
+
     while (1)
     {
-        // xQueueReceive(encoder_queue, &position, portMAX_DELAY);
-        position = left_encoder.position; // For testing, use left encoder position
-        printf("Left Encoder Position: %d\n", position);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "Encoder Position: %d", encoder->position);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
+}
+
+BaseType_t encoder_service(encoder_t *encoder)
+{
+    BaseType_t status = xTaskCreate(
+        encoder_task,
+        "encoder_task",
+        2048,
+        (void *)encoder,
+        5,
+        NULL);
+
+    if (status == pdPASS)
+    {
+        ESP_LOGI(TAG, "Encoder service started");
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Failed to start encoder service");
+    }
+
+    return status;
 }

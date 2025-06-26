@@ -26,18 +26,18 @@
 #include "include/events.h"
 #include "RadioLibCustomHAL.hpp"
 
-#define LEFT_ENCODER_A (gpio_num_t) 4
-#define LEFT_ENCODER_B (gpio_num_t) 5
-// #define RIGHT_ENCODER_A (gpio_num_t) 7
-// #define RIGHT_ENCODER_B (gpio_num_t) 8
+
+// #define RIGHT_ENCODER_A (gpio_num_t) 41
+// #define RIGHT_ENCODER_B (gpio_num_t) 40
 
 static const constexpr char *TAG = "Main";
+
 
 void initialise(rr_state_t state); 
 /*the correct contact information must be provided to avoid having to pay for a second delivery fee. 
 And last mile delivery is provided by USPS/PCF/ONTRAC/T FORCE/UDS*/
 
-
+encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B};
 
 extern "C" void app_main(void)
 {
@@ -58,9 +58,12 @@ extern "C" void app_main(void)
         // Wait for events to be added to the queue        vTaskDelay(2000 / portTICK_PERIOD_MS);
 
         // rr_os_event_handler();
+        printf("Left Encoder Position: %f\n", (float) (left_encoder.position / CPR));
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
+
+// ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
 
 /*id initialise_radio()
 {
@@ -110,12 +113,13 @@ void initialise(rr_state_t state)
 
     if (state.encoder_enabled)
     {
+        gpio_install_isr_service(0);
         ESP_LOGI(TAG, "Encoder Service Starting");
-        init_encoder(true, LEFT_ENCODER_A, LEFT_ENCODER_B);
+        init_encoder(&left_encoder);
         //init_encoder(false, RIGHT_ENCODER_A, RIGHT_ENCODER_B);
-        encoder_task();
+        // encoder_service();
     }
 
-    initialise_drivetrain();
-    launch_rr_os_service();
+    // initialise_drivetrain();
+    // launch_rr_os_service();
 }
