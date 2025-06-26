@@ -27,13 +27,15 @@
 #include "RadioLibCustomHAL.hpp"
 
 #define LEFT_ENCODER_A (gpio_num_t) 1
-#define LEFT_ENCODER_B (gpio_num_t) 2
+#define LEFT_ENCODER_B (gpio_num_t) 5
+// #define RIGHT_ENCODER_A (gpio_num_t) 3
+// #define RIGHT_ENCODER_B (gpio_num_t) 4
 
 static const constexpr char *TAG = "Main";
 
 void initialise(rr_state_t state); 
-//the correct contact information must be provided to avoid having to pay for a second delivery fee. 
-//And last mile delivery is provided by USPS/PCF/ONTRAC/T FORCE/UDS
+/*the correct contact information must be provided to avoid having to pay for a second delivery fee. 
+And last mile delivery is provided by USPS/PCF/ONTRAC/T FORCE/UDS*/
 
 
 
@@ -50,6 +52,7 @@ extern "C" void app_main(void)
 
     // // Initialising peripherals
     initialise(state);
+    
     while (1)
     {
         // Wait for events to be added to the queue
@@ -78,10 +81,11 @@ extern "C" void app_main(void)
 
 void initialise(rr_state_t state)
 {
-    // if (state.radio_enabled)
-    // {
-    //     //initialise_radio();
-    // }
+    /* if (state.radio_enabled)
+    { 
+        initialise_radio();
+    }
+    */ 
     
     
     if (state.imu_enabled)
@@ -95,20 +99,21 @@ void initialise(rr_state_t state)
     }
     
 
-    // if (state.led_enabled)
-    // {
-    //     initialise_led();
-    //     set_led_color(INDEPENDENT_COLOR);
-    //     twai_interrupt_init();
-    // }
+    /* if (state.led_enabled)
+     {
+         initialise_led();
+         set_led_color(INDEPENDENT_COLOR);
+         twai_interrupt_init();
+     }
+    */
 
     if (state.encoder_enabled)
     {
         init_encoder(true, LEFT_ENCODER_A, LEFT_ENCODER_B);
-        // init_encoder(false, RIGHT_ENCODER_A, RIGHT_ENCODER_B);
+        //init_encoder(false, RIGHT_ENCODER_A, RIGHT_ENCODER_B);
         encoder_task();
     }
 
-    // initialise_drivetrain();
+    //initialise_drivetrain();
     launch_rr_os_service();
 }
