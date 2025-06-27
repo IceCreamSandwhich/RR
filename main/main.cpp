@@ -25,6 +25,8 @@
 #include "include/led.h"
 #include "include/events.h"
 #include "RadioLibCustomHAL.hpp"
+#include "wifi_service.h"
+
 
 
 // #define RIGHT_ENCODER_A (gpio_num_t) 41
@@ -46,10 +48,10 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Starting app_main");
 
     // Creating events queue
-    // state.connected = true;
+    // state.connected = false;
     // state.twai_active = false;
     state.imu_enabled = false;
-    // state.led_enabled = true;
+    state.led_enabled = false;
     state.encoder_enabled = true;
 
     // // Initialising peripherals
@@ -88,11 +90,10 @@ extern "C" void app_main(void)
 
 void initialise(rr_state_t state)
 {
-    /* if (state.radio_enabled)
+    if (state.radio_enabled)
     { 
         initialise_radio();
-    }
-    */ 
+    } 
     
     
     if (state.imu_enabled)
@@ -105,13 +106,12 @@ void initialise(rr_state_t state)
         ESP_LOGI(TAG, "Imu service started");
     }
     
-    /* if (state.led_enabled)
+    if (state.led_enabled)
      {
         initialise_led();
         set_led_color(INDEPENDENT_COLOR);
         twai_interrupt_init();
      }
-    */
 
     if (state.encoder_enabled)
     {
@@ -121,6 +121,16 @@ void initialise(rr_state_t state)
         //init_encoder(&right_encoder);
         // encoder_service();
     }
+
+    // Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    wifi_init_softap();
 
     // initialise_drivetrain();
     // launch_rr_os_service();
