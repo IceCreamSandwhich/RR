@@ -2,6 +2,7 @@
 #define WIFI_SERVICE_H
 
 #include "esp_err.h"
+#include "nvs_flash.h"
 
 #ifdef __cplusplus
 extern "C" {

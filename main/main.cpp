@@ -52,7 +52,9 @@ extern "C" void app_main(void)
     // state.twai_active = false;
     state.imu_enabled = false;
     state.led_enabled = false;
-    state.encoder_enabled = true;
+    //state.radio_enabled = false;
+    state.encoder_enabled = false;
+    state.wifi_enabled = true;
 
     // // Initialising peripherals
     initialise(state);
@@ -90,10 +92,11 @@ extern "C" void app_main(void)
 
 void initialise(rr_state_t state)
 {
-    if (state.radio_enabled)
+    /* No Radio code right now if (state.radio_enabled)
     { 
         initialise_radio();
     } 
+    */
     
     
     if (state.imu_enabled)
@@ -119,10 +122,10 @@ void initialise(rr_state_t state)
         ESP_LOGI(TAG, "Encoder Service Starting");
         init_encoder(&left_encoder);
         //init_encoder(&right_encoder);
-        // encoder_service();
+        //encoder_service();
     }
 
-    // Initialize NVS
+    // Initialize NVS for WiFi functionality
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -130,8 +133,11 @@ void initialise(rr_state_t state)
     }
     ESP_ERROR_CHECK(ret);
 
-    wifi_init_softap();
-
+    if (state.wifi_enabled)
+    {
+        wifi_init_softap();
+    }
+    
     // initialise_drivetrain();
     // launch_rr_os_service();
 }

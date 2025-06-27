@@ -7,6 +7,8 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "wifi_service.h"
+#include "esp_wifi.h"
+
 
 static const char *TAG = "wifi softAP";
 
@@ -38,26 +40,23 @@ void wifi_init_softap(void)
                                                         &wifi_event_handler,
                                                         NULL,
                                                         NULL));
-
     wifi_config_t wifi_config = {
         .ap = {
             .ssid = WIFI_SERVICE_SSID,
+            .password = WIFI_SERVICE_PASS,
             .ssid_len = strlen(WIFI_SERVICE_SSID),
             .channel = WIFI_SERVICE_CHANNEL,
-            .password = WIFI_SERVICE_PASS,
-            .max_connection = WIFI_SERVICE_MAX_STA_CONN,
-#ifdef CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT
-            .authmode = WIFI_AUTH_WPA3_PSK,
-            .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
-#else
             .authmode = WIFI_AUTH_WPA2_PSK,
-#endif
+            .ssid_hidden = 0,
+            .max_connection = WIFI_SERVICE_MAX_STA_CONN,
             .pmf_cfg = {
                 .required = true,
             },
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT
+            .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+#endif
         },
     };
-
     if (strlen(WIFI_SERVICE_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
