@@ -1,74 +1,96 @@
-// # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
-// # SPDX-License-Identifier: CC0-1.0
-// import os.path
-// from typing import Tuple
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_mac.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
 
-// import pytest
-// from pytest_embedded_idf.dut import IdfDut
+#include "lwip/err.h"
+#include "lwip/sys.h"
 
-// # @pytest.mark.supported_targets
-// # This test should support all targets, even between different target types
-// # For now our CI only support multi dut with esp32
-// # If you want to enable different target type, please use the following param
-// # @pytest.mark.parametrize(
-// #     'count, app_path, target', [
-// #         (2,
-// #          f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
-// #          'esp32|esp32s2'),
-// #     ],
-// #     indirect=True,
-// # )
+/* WiFi configuration that you can set via project configuration menu by calling idf.py menuconfig.
 
+   If you'd rather not, just change the below entries to strings with
+   the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
+*/
+#define WIFI_SERVICE_SSID           CONFIG_ESP_WIFI_SSID
+#define WIFI_SERVICE_PASS           CONFIG_ESP_WIFI_PASSWORD
+#define WIFI_SERVICE_CHANNEL        CONFIG_ESP_WIFI_CHANNEL
+#define WIFI_SERVICE_MAX_STA_CONN   CONFIG_ESP_MAX_STA_CONN
 
-// @pytest.mark.esp32
-// @pytest.mark.esp32c3
-// @pytest.mark.esp32s2
-// @pytest.mark.esp32s3
-// @pytest.mark.esp32c5
-// @pytest.mark.esp32c6
-// @pytest.mark.esp32c61
-// @pytest.mark.wifi_two_dut
-// @pytest.mark.parametrize(
-//     'count, app_path', [
-//         (2,
-//          f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}'),
-//     ], indirect=True
-// )
-// def test_wifi_getting_started(dut: Tuple[IdfDut, IdfDut]) -> None:
-//     softap = dut[0]
-//     station = dut[1]
+static const char *TAG = "wifi softAP";
 
-//     ssid = softap.app.sdkconfig.get('ESP_WIFI_SSID')
-//     password = softap.app.sdkconfig.get('ESP_WIFI_PASSWORD')
-//     assert station.app.sdkconfig.get('ESP_WIFI_SSID') == ssid
-//     assert station.app.sdkconfig.get('ESP_WIFI_PASSWORD') == password
+static void wifi_event_handler(void* arg, esp_event_base_t event_base,
+                                    int32_t event_id, void* event_data)
+{
+    if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+        wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
+        ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+        wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
+        ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d, reason=%d",
+                 MAC2STR(event->mac), event->aid, event->reason);
+    }
+}
 
-//     tag = 'wifi station'
-//     station.expect(f'{tag}: got ip:', timeout=60)
-//     station.expect(f'{tag}: connected to ap SSID:{ssid} password:{password}', timeout=60)
-//     softap.expect('station .+ join, AID=', timeout=60)
+void wifi_init_softap(void)
+{
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_ap();
 
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-// @pytest.mark.esp32c2
-// @pytest.mark.wifi_two_dut
-// @pytest.mark.xtal_26mhz
-// @pytest.mark.parametrize(
-//     'count, config, baud, app_path', [
-//         (2, 'esp32c2_xtal26m', '74880',
-//          f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}'),
-//     ], indirect=True
-// )
-// def test_wifi_getting_started_esp32c2_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
-//     softap = dut[0]
-//     station = dut[1]
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        ESP_EVENT_ANY_ID,
+                                                        &wifi_event_handler,
+                                                        NULL,
+                                                        NULL));
 
-//     assert station.app.sdkconfig['ESP_WIFI_SOFTAP_SUPPORT'] is False
-//     ssid = softap.app.sdkconfig.get('ESP_WIFI_SSID')
-//     password = softap.app.sdkconfig.get('ESP_WIFI_PASSWORD')
-//     assert station.app.sdkconfig.get('ESP_WIFI_SSID') == ssid
-//     assert station.app.sdkconfig.get('ESP_WIFI_PASSWORD') == password
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = EXAMPLE_ESP_WIFI_SSID,
+            .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
+            .channel = EXAMPLE_ESP_WIFI_CHANNEL,
+            .password = EXAMPLE_ESP_WIFI_PASS,
+            .max_connection = EXAMPLE_MAX_STA_CONN,
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT
+            .authmode = WIFI_AUTH_WPA3_PSK,
+            .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+#else /* CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT */
+            .authmode = WIFI_AUTH_WPA2_PSK,
+#endif
+            .pmf_cfg = {
+                    .required = true,
+            },
+        },
+    };
+    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
+        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
 
-//     tag = 'wifi station'
-//     station.expect(f'{tag}: got ip:', timeout=60)
-//     station.expect(f'{tag}: connected to ap SSID:{ssid} password:{password}', timeout=60)
-//     softap.expect('station .+ join, AID=', timeout=60)
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s channel:%d",
+             EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS, EXAMPLE_ESP_WIFI_CHANNEL);
+}
+
+void app_main(void)
+{
+    //Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+      ESP_ERROR_CHECK(nvs_flash_erase());
+      ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
+    wifi_init_softap();
+}

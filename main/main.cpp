@@ -38,6 +38,8 @@ void initialise(rr_state_t state);
 And last mile delivery is provided by USPS/PCF/ONTRAC/T FORCE/UDS*/
 
 encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B};
+//encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
+
 
 extern "C" void app_main(void)
 {
@@ -55,10 +57,11 @@ extern "C" void app_main(void)
     
     while (1)
     {
-        // Wait for events to be added to the queue        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        // Wait for events to be added to the queue
+        //vTaskDelay(2000 / portTICK_PERIOD_MS);
 
         // rr_os_event_handler();
-        printf("Left Encoder Position: %f\n", (float) (left_encoder.position / CPR));
+        printf("Left Encoder Position: %f\n", (float)(left_encoder.position / CPR));
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -102,7 +105,6 @@ void initialise(rr_state_t state)
         ESP_LOGI(TAG, "Imu service started");
     }
     
-
     /* if (state.led_enabled)
      {
         initialise_led();
@@ -116,7 +118,7 @@ void initialise(rr_state_t state)
         gpio_install_isr_service(0);
         ESP_LOGI(TAG, "Encoder Service Starting");
         init_encoder(&left_encoder);
-        //init_encoder(false, RIGHT_ENCODER_A, RIGHT_ENCODER_B);
+        //init_encoder(&right_encoder);
         // encoder_service();
     }
 

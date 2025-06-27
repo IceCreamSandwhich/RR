@@ -17,6 +17,10 @@ typedef struct encoder_t {
 #define LEFT_ENCODER_A GPIO_NUM_10
 #define LEFT_ENCODER_B GPIO_NUM_9
 
+// #define LEFT_ENCODER_A GPIO_NUM_11
+// #define LEFT_ENCODER_B GPIO_NUM_12
+
+
 #define CPR 12 * 250
 
 // void IRAM_ATTR encoder_isr_handler(void *arg);

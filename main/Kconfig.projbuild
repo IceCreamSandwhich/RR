@@ -61,20 +61,19 @@ menu "DRIVETRAIN Configuration"
         help
             This option selects the GPIO pin used for the right motor B signal.
 
-
 endmenu
 
 
 menu "WiFi Configuration"
     config ESP_WIFI_SSID
         string "WiFi SSID"
-        default "myssid"
+        default "RR-ESP32"
         help
             SSID (network name) for the example to connect to.
 
     config ESP_WIFI_PASSWORD
         string "WiFi Password"
-        default "mypassword"
+        default "SidneyDaGoat"
         help
             WiFi password (WPA or WPA2) for the example to use.
     config ESP_WIFI_CHANNEL
