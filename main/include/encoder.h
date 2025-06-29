@@ -5,6 +5,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/gpio.h"
+#include "nvs_flash.h"
 
 typedef struct encoder_t {
     volatile int position;

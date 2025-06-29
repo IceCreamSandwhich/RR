@@ -27,11 +27,6 @@
 #include "RadioLibCustomHAL.hpp"
 #include "wifi_service.h"
 
-
-
-// #define RIGHT_ENCODER_A (gpio_num_t) 41
-// #define RIGHT_ENCODER_B (gpio_num_t) 40
-
 static const constexpr char *TAG = "Main";
 
 
@@ -92,12 +87,23 @@ extern "C" void app_main(void)
 
 void initialise(rr_state_t state)
 {
+    // Initialize NVS — required before using WiFi
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECwifi_init_sta();K(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    // Start WiFi
+    if (state.wifi_enabled){
+        wifi_init_softap();
+    }
     /* No Radio code right now if (state.radio_enabled)
     { 
         initialise_radio();
     } 
     */
-    
     
     if (state.imu_enabled)
     {
@@ -123,19 +129,6 @@ void initialise(rr_state_t state)
         init_encoder(&left_encoder);
         //init_encoder(&right_encoder);
         //encoder_service();
-    }
-
-    // Initialize NVS for WiFi functionality
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    if (state.wifi_enabled)
-    {
-        wifi_init_softap();
     }
     
     // initialise_drivetrain();
