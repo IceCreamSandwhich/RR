@@ -15,8 +15,8 @@ typedef struct encoder_t {
 } encoder_t;
 
 
-#define LEFT_ENCODER_A GPIO_NUM_10
-#define LEFT_ENCODER_B GPIO_NUM_9
+#define LEFT_ENCODER_A GPIO_NUM_8
+#define LEFT_ENCODER_B GPIO_NUM_9 
 
 // #define LEFT_ENCODER_A GPIO_NUM_11
 // #define LEFT_ENCODER_B GPIO_NUM_12

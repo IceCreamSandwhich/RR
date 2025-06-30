@@ -1,19 +1,15 @@
 #pragma once
 
-#include "esp_event.h"
-#include "esp_wifi.h"
-#include "esp_log.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Adjust as needed
-#define WIFI_SSID       "YourSSID"
-#define WIFI_PASS       "YourPassword"
-#define MAX_RETRY       5
+#define WIFI_SSID        CONFIG_ESP_WIFI_SSID
+#define WIFI_PASS        CONFIG_ESP_WIFI_PASSWORD
+#define WIFI_CHANNEL     CONFIG_ESP_WIFI_CHANNEL
+#define MAX_STA_CONN     CONFIG_ESP_MAX_STA_CONN
 
-void wifi_init_sta(void);
+void wifi_init_softap(void);
 
 #ifdef __cplusplus
 }

@@ -48,7 +48,7 @@ extern "C" void app_main(void)
     state.imu_enabled = false;
     state.led_enabled = false;
     //state.radio_enabled = false;
-    state.encoder_enabled = false;
+    state.encoder_enabled = true;
     state.wifi_enabled = true;
 
     // // Initialising peripherals
@@ -61,7 +61,7 @@ extern "C" void app_main(void)
 
         // rr_os_event_handler();
         printf("Left Encoder Position: %f\n", (float)(left_encoder.position / CPR));
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -90,7 +90,7 @@ void initialise(rr_state_t state)
     // Initialize NVS — required before using WiFi
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECwifi_init_sta();K(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
@@ -99,6 +99,7 @@ void initialise(rr_state_t state)
     if (state.wifi_enabled){
         wifi_init_softap();
     }
+
     /* No Radio code right now if (state.radio_enabled)
     { 
         initialise_radio();
