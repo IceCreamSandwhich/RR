@@ -13,7 +13,7 @@ QueueHandle_t encoder_queue;
 static void IRAM_ATTR encoder_isr_handler(void *arg)
 {
     encoder_t *encoder = (encoder_t *)arg;
-
+    
     int a_val = gpio_get_level(encoder->pin_a);
     int b_val = gpio_get_level(encoder->pin_b);
     int encoding = (a_val << 1) | b_val;

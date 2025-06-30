@@ -9,10 +9,10 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "wifi_service.h"
-#include "esp_mac.h" 
+#include "esp_mac.h"
 
 
-static const char *TAG = "wifi_softAP";
+static const char *TAG = "WIFI SOFTAP";
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data)
@@ -28,10 +28,21 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+void initalize_NVS(){
+    // Initialize NVS (Non-Volatile Storage) — required before using WiFi
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+}
+
+
 void wifi_init_softap(void)
 {
     ESP_LOGI(TAG, "Initializing WiFi SoftAP");
-
+    initalize_NVS();
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_ap();

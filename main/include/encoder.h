@@ -1,11 +1,9 @@
 #pragma once
 
-// #include "config.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/gpio.h"
-#include "nvs_flash.h"
 
 typedef struct encoder_t {
     volatile int position;
@@ -15,8 +13,8 @@ typedef struct encoder_t {
 } encoder_t;
 
 
-#define LEFT_ENCODER_A GPIO_NUM_8
-#define LEFT_ENCODER_B GPIO_NUM_9 
+#define LEFT_ENCODER_A GPIO_NUM_6
+#define LEFT_ENCODER_B GPIO_NUM_5 
 
 // #define LEFT_ENCODER_A GPIO_NUM_11
 // #define LEFT_ENCODER_B GPIO_NUM_12

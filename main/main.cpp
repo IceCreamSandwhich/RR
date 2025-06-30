@@ -27,12 +27,9 @@
 #include "RadioLibCustomHAL.hpp"
 #include "wifi_service.h"
 
-static const constexpr char *TAG = "Main";
-
+static const constexpr char *TAG = "MAIN";
 
 void initialise(rr_state_t state); 
-/*the correct contact information must be provided to avoid having to pay for a second delivery fee. 
-And last mile delivery is provided by USPS/PCF/ONTRAC/T FORCE/UDS*/
 
 encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B};
 //encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
@@ -43,12 +40,12 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG, "Starting app_main");
 
     // Creating events queue
-    // state.connected = false;
-    // state.twai_active = false;
-    state.imu_enabled = false;
+    state.connected = false;
+    state.twai_active = false;
     state.led_enabled = false;
-    //state.radio_enabled = false;
+    state.radio_enabled = false;
     state.encoder_enabled = true;
+    state.imu_enabled = false;
     state.wifi_enabled = true;
 
     // // Initialising peripherals
@@ -57,7 +54,7 @@ extern "C" void app_main(void)
     while (1)
     {
         // Wait for events to be added to the queue
-        //vTaskDelay(2000 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
 
         // rr_os_event_handler();
         printf("Left Encoder Position: %f\n", (float)(left_encoder.position / CPR));
@@ -87,20 +84,12 @@ extern "C" void app_main(void)
 
 void initialise(rr_state_t state)
 {
-    // Initialize NVS — required before using WiFi
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
     // Start WiFi
     if (state.wifi_enabled){
         wifi_init_softap();
     }
 
-    /* No Radio code right now if (state.radio_enabled)
+    /* Not using Radio right now if (state.radio_enabled)
     { 
         initialise_radio();
     } 
@@ -117,11 +106,11 @@ void initialise(rr_state_t state)
     }
     
     if (state.led_enabled)
-     {
+    {
         initialise_led();
         set_led_color(INDEPENDENT_COLOR);
         twai_interrupt_init();
-     }
+    }
 
     if (state.encoder_enabled)
     {
