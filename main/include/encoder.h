@@ -13,14 +13,14 @@ typedef struct encoder_t {
 } encoder_t;
 
 
-#define LEFT_ENCODER_A GPIO_NUM_6
-#define LEFT_ENCODER_B GPIO_NUM_5 
+#define LEFT_ENCODER_A GPIO_NUM_6 
+#define LEFT_ENCODER_B GPIO_NUM_5  
 
-// #define LEFT_ENCODER_A GPIO_NUM_11
-// #define LEFT_ENCODER_B GPIO_NUM_12
+#define RIGHT_ENCODER_A GPIO_NUM_11 
+#define RIGHT_ENCODER_B GPIO_NUM_12 
 
 
-#define CPR 12 * 250
+#define CPR (1375)   //(Manually Counted for one full rotation for our motors) 
 
 // void IRAM_ATTR encoder_isr_handler(void *arg);
 void init_encoder(encoder_t* encoder);

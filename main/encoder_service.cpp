@@ -23,7 +23,7 @@ static void IRAM_ATTR encoder_isr_handler(void *arg)
     {
         if (encoder->lastEncoding == 0b01)
         {
-            encoder->position++;
+            encoder->position++ ;
         }
         else if (encoder->lastEncoding == 0b10)
         {
@@ -61,7 +61,7 @@ void init_encoder(encoder_t* encoder)
     encoder->position = 0;
     encoder->lastEncoding = (gpio_get_level(encoder->pin_a) << 1) | gpio_get_level(encoder->pin_b);
 
-    // Enable interrupt service if not already done globally
+    // Enable interrupt service 
     gpio_install_isr_service(0);  // Only needs to be called once in app
     gpio_isr_handler_add(encoder->pin_a, encoder_isr_handler, (void *)encoder);
     gpio_isr_handler_add(encoder->pin_b, encoder_isr_handler, (void *)encoder);

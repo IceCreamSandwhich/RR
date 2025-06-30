@@ -32,7 +32,7 @@ static const constexpr char *TAG = "MAIN";
 void initialise(rr_state_t state); 
 
 encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B};
-//encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
+encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
 
 
 extern "C" void app_main(void)
@@ -44,21 +44,35 @@ extern "C" void app_main(void)
     state.twai_active = false;
     state.led_enabled = false;
     state.radio_enabled = false;
+    state.wifi_enabled = false;
     state.encoder_enabled = true;
     state.imu_enabled = false;
-    state.wifi_enabled = true;
 
     // // Initialising peripherals
     initialise(state);
-    
+            //vTaskDelay(2000 / portTICK_PERIOD_MS);
+
     while (1)
     {
         // Wait for events to be added to the queue
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 
         // rr_os_event_handler();
-        printf("Left Encoder Position: %f\n", (float)(left_encoder.position / CPR));
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        //printf("Right Encoder Position: %f\n ", (float)(right_encoder.position / 1));
+        //printf("Left Encoder Position: %f\n", (float)(left_encoder.position / 1));
+        //ESP_LOGI("ENC", "Right Pos: %d, Right A: %d, B: %d ;-;", right_encoder.position, gpio_get_level(right_encoder.pin_a), gpio_get_level(right_encoder.pin_b));
+        //ESP_LOGI("ENC", "Left Pos: %d, A: %d, B: %d ",left_encoder.position, gpio_get_level(left_encoder.pin_a), gpio_get_level(left_encoder.pin_b));
+
+        ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+        ESP_LOGI("ENC", "Pos no div: %f", ((float)(right_encoder.position)));
+        ESP_LOGI(TAG, ""); // Blank line for debugging
+        
+        
+        ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+        ESP_LOGI("ENC", "Pos no div: %f", ((float)(left_encoder.position)));
+        ESP_LOGI(TAG, ""); // Blank line for debugging
+
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -114,10 +128,9 @@ void initialise(rr_state_t state)
 
     if (state.encoder_enabled)
     {
-        gpio_install_isr_service(0);
         ESP_LOGI(TAG, "Encoder Service Starting");
         init_encoder(&left_encoder);
-        //init_encoder(&right_encoder);
+        init_encoder(&right_encoder);
         //encoder_service();
     }
     

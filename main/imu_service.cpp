@@ -18,7 +18,11 @@ void init_imu()
         ESP_LOGE(TAG, "Init failure, returning from main.");
         return;
     }
-    imu.rpt.rv_gyro_integrated.enable(100000); // Set report rate in us
+    imu.rpt.rv_gyro_integrated.enable(1000); // Set report rate in us
+    //imu.rpt.linear_accelerometer.enable(1000);
+    //imu.rpt.cal_magnetometer.enable(1000);
+    
+
 }
 
 void imu_loop(void *pvParameter)
@@ -28,16 +32,30 @@ void imu_loop(void *pvParameter)
         // block until new report is detected
         if (imu.data_available())
         {
-            // get the latest report
-            imu.rpt.rv_gyro_integrated.get(quat, omega);
-            euler = quat;
-            ESP_LOGI(TAG, "Roll: %f, Pitch: %f, Yaw: %f", euler.x, euler.y, euler.z);
+            // // get the latest report from Gyro
+            // imu.rpt.rv_gyro_integrated.get(quat, omega);
+            // euler = quat;
+            // ESP_LOGI(TAG, "Roll: %f, Pitch: %f, Yaw: %f", euler.x, euler.y, euler.z);
+
+            // get the linear acceleration data
+            /*
+            bno08x_accel_t linear_accel;
+            linear_accel = imu.rpt.linear_accelerometer.get();
+            ESP_LOGI(TAG, "Linear Acceleration -X: %f, Y: %f, Z: %f", 
+                linear_accel.rqdata.x, linear_accel.rqdata.y, linear_accel.rqdata.z);
+
+            //get calibrated magnetic field
+            bno08x_magf_t mag_field;
+            mag_field = imu.rpt.cal_magnetometer.get();
+            ESP_LOGI(TAG, "Magnetometer - X: %f, Y: %f, Z: %f", 
+            mag_field.rqdata.x, mag_field.rqdata.y, mag_field.rqdata.z);
+            */
         }
         else 
         {
             ESP_LOGI(TAG, "No data available");
         }
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
