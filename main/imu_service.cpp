@@ -32,10 +32,10 @@ void imu_loop(void *pvParameter)
         // block until new report is detected
         if (imu.data_available())
         {
-            // // get the latest report from Gyro
-            // imu.rpt.rv_gyro_integrated.get(quat, omega);
-            // euler = quat;
-            // ESP_LOGI(TAG, "Roll: %f, Pitch: %f, Yaw: %f", euler.x, euler.y, euler.z);
+            // get the latest report from Gyro
+            imu.rpt.rv_gyro_integrated.get(quat, omega);
+            euler = quat;
+            ESP_LOGI(TAG, "Roll: %f, Pitch: %f, Yaw: %f", euler.x, euler.y, euler.z);
 
             // get the linear acceleration data
             /*
@@ -55,7 +55,7 @@ void imu_loop(void *pvParameter)
         {
             ESP_LOGI(TAG, "No data available");
         }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -65,7 +65,7 @@ BaseType_t imu_service(void)
     status = xTaskCreate(
         imu_loop,
         "imu_task",
-        2048,
+        8192,
         NULL,
         5,
         NULL);

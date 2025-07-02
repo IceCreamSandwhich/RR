@@ -60,26 +60,34 @@ void initialise_drivetrain()
 
     initialise_motor(left_motor);
     initialise_motor(right_motor);
+
+    set_motor_speed(right_motor, 512, true);
+    set_motor_speed(left_motor, 512, true);
+    speed_callback(35, 35);
+    speed_callback(35, 35);
 }
 
 void initialise_motor(motor_t m)
 {
-    ledc_channel_config_t ledc_channel_cf;
+    ledc_channel_config_t ledc_channel_cf = {0};
 
-    ledc_channel_cf.gpio_num = m.pwma;
     ledc_channel_cf.speed_mode = SPEED_MODE;
-    ledc_channel_cf.channel = m.channela;
-    ledc_channel_cf.intr_type = LEDC_INTR_DISABLE;
-    ledc_channel_cf.timer_sel = LEDC_TIMER_0;
-    ledc_channel_cf.duty = 0;
-    ledc_channel_cf.hpoint = 0;
-    // ledc_channel_cf.flags = LEDC_FADE_NO_WAIT;
+    ledc_channel_cf.intr_type  = LEDC_INTR_DISABLE;
+    ledc_channel_cf.timer_sel  = LEDC_TIMER_0;
+    ledc_channel_cf.duty       = 0;
+    ledc_channel_cf.hpoint     = 0;
+
+    // Configure A pin 
+    ledc_channel_cf.gpio_num = m.pwma;
+    ledc_channel_cf.channel  = m.channela;
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel_cf));
 
+    // Configure B pin 
     ledc_channel_cf.gpio_num = m.pwmb;
-    ledc_channel_cf.channel = m.channelb;
+    ledc_channel_cf.channel  = m.channelb;
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel_cf));
 }
+
 
 void set_motor_speed(motor_t m, int speed, bool forward)
 {

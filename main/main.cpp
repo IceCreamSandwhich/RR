@@ -31,7 +31,7 @@ static const constexpr char *TAG = "MAIN";
 
 void initialise(rr_state_t state); 
 
-encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B};
+encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B}; 
 encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
 
 
@@ -45,13 +45,14 @@ extern "C" void app_main(void)
     state.led_enabled = false;
     state.radio_enabled = false;
     state.wifi_enabled = false;
-    state.encoder_enabled = true;
+    state.encoder_enabled = false;
     state.imu_enabled = false;
 
     // // Initialising peripherals
     initialise(state);
             //vTaskDelay(2000 / portTICK_PERIOD_MS);
 
+    /*            
     while (1)
     {
         // Wait for events to be added to the queue
@@ -63,17 +64,20 @@ extern "C" void app_main(void)
         //ESP_LOGI("ENC", "Right Pos: %d, Right A: %d, B: %d ;-;", right_encoder.position, gpio_get_level(right_encoder.pin_a), gpio_get_level(right_encoder.pin_b));
         //ESP_LOGI("ENC", "Left Pos: %d, A: %d, B: %d ",left_encoder.position, gpio_get_level(left_encoder.pin_a), gpio_get_level(left_encoder.pin_b));
 
+        
         ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
         ESP_LOGI("ENC", "Pos no div: %f", ((float)(right_encoder.position)));
         ESP_LOGI(TAG, ""); // Blank line for debugging
         
         
         ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-        ESP_LOGI("ENC", "Pos no div: %f", ((float)(left_encoder.position)));
+        ESP_LOGI("ENC", "Pos nhow much voltage o div: %f", ((float)(left_encoder.position)));
         ESP_LOGI(TAG, ""); // Blank line for debugging
 
         vTaskDelay(3000 / portTICK_PERIOD_MS);
+        
     }
+    */
 }
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
@@ -98,7 +102,7 @@ extern "C" void app_main(void)
 
 void initialise(rr_state_t state)
 {
-    // Start WiFi
+    // WiFi for esp as AP
     if (state.wifi_enabled){
         wifi_init_softap();
     }
