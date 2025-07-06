@@ -6,12 +6,17 @@ ESP-IDF
 microROS
 
 ## Getting Started
-Clone the repository
+Clone the repository by running the following command in the directory you want:
+
+git clone https://github.com/IceCreamSandwhich/RR.git
+
+In the top level of the repository run the following
 ```
 git submodule init
 git submodule update
 ```
-These commands pull third party repositories into your clone repository.
+
+These two commands pull third party repositories into your clone repository.
 
 ## Building
 ```mkdir build && cd build
