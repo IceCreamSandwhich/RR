@@ -46,12 +46,11 @@ extern "C" void app_main(void)
     state.radio_enabled = false;
     state.wifi_enabled = false;
     state.encoder_enabled = false;
-    state.imu_enabled = false;
+    state.imu_enabled = true;
 
-    // // Initialising peripherals
+    // Initialising peripherals
     initialise(state);
-            //vTaskDelay(2000 / portTICK_PERIOD_MS);
-
+    //vTaskDelay(2000 / portTICK_PERIOD_MS);
     /*            
     while (1)
     {
@@ -116,9 +115,6 @@ void initialise(rr_state_t state)
     if (state.imu_enabled)
     {
         init_imu();
-        ESP_LOGI(
-            TAG, "Starting IMU service"
-        );
         imu_service();
         ESP_LOGI(TAG, "Imu service started");
     }
