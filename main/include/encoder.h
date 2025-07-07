@@ -13,11 +13,11 @@ typedef struct encoder_t {
 } encoder_t;
 
 
-#define LEFT_ENCODER_A GPIO_NUM_6 
-#define LEFT_ENCODER_B GPIO_NUM_5  
+#define LEFT_ENCODER_A GPIO_NUM_40 
+#define LEFT_ENCODER_B GPIO_NUM_41  
 
-#define RIGHT_ENCODER_A GPIO_NUM_1 
-#define RIGHT_ENCODER_B GPIO_NUM_2 
+#define RIGHT_ENCODER_A GPIO_NUM_4 
+#define RIGHT_ENCODER_B GPIO_NUM_42 
 
 
 #define CPR (1375)   //(Manually Counted for one full rotation for our motors change as needed) 

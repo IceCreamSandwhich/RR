@@ -56,26 +56,26 @@ void init_encoder(encoder_t* encoder)
     io_conf.pin_bit_mask = (1ULL << encoder->pin_a) | (1ULL << encoder->pin_b);
     io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
-
+    
     // Initialize encoder state
     encoder->position = 0;
     encoder->lastEncoding = (gpio_get_level(encoder->pin_a) << 1) | gpio_get_level(encoder->pin_b);
-
-    // Enable interrupt service 
+    
+    // Enable interrupt service
+    gpio_install_isr_service(0);  // Only needs to be called once in app
     gpio_isr_handler_add(encoder->pin_a, encoder_isr_handler, (void *)encoder);
     gpio_isr_handler_add(encoder->pin_b, encoder_isr_handler, (void *)encoder);
 }
 
-void encoder_task(void* pvParameter)
-{
-    encoder_t *encoder = (encoder_t *)pvParameter;
-
-    while (1)
-    {
-        ESP_LOGI(TAG, "Encoder Position: %d", encoder->position);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
+// void encoder_task(void* pvParameter)
+// {
+//     while(1)
+//     {
+//         ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+//         ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+//         vTaskDelay(1000 / portTICK_PERIOD_MS);
+//     }
+// }
 
 BaseType_t encoder_service(encoder_t *encoder)
 {

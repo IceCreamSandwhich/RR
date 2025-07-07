@@ -45,18 +45,44 @@ extern "C" void app_main(void)
     state.led_enabled = false;
     state.radio_enabled = false;
     state.wifi_enabled = false;
-    state.encoder_enabled = false;
+    state.encoder_enabled = true; // need to set to true
     state.imu_enabled = true;
 
     // Initialising peripherals
     initialise(state);
+    // // 3. Move forward at ~50% speed for 2 seconds
+    // ESP_LOGI(TAG, "Moving forward");
+    // speed_callback(512, 512);  // Move both motors forward
+    // vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    // 4. Move backward for 2 seconds
+    ESP_LOGI(TAG, "Moving backward");
+    speed_callback(-512, -512);  // Reverse both motors
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    // // 5. Spin in place (left forward, right backward)
+    // ESP_LOGI(TAG, "Spinning");
+    // speed_callback(512, -512);
+    // vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    // // 6. Stop
+    // ESP_LOGI(TAG, "Stopping");
+    // speed_callback(0, 0);
+
+    // while (1)
+    // {
+    //     ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+    //     ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // }
+
+    // }
+
     //vTaskDelay(2000 / portTICK_PERIOD_MS);
-    /*            
-    while (1)
+                
+    // while (1)
     {
         // Wait for events to be added to the queue
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-
         // rr_os_event_handler();
         //printf("Right Encoder Position: %f\n ", (float)(right_encoder.position / 1));
         //printf("Left Encoder Position: %f\n", (float)(left_encoder.position / 1));
@@ -64,19 +90,17 @@ extern "C" void app_main(void)
         //ESP_LOGI("ENC", "Left Pos: %d, A: %d, B: %d ",left_encoder.position, gpio_get_level(left_encoder.pin_a), gpio_get_level(left_encoder.pin_b));
 
         
-        ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-        ESP_LOGI("ENC", "Pos no div: %f", ((float)(right_encoder.position)));
-        ESP_LOGI(TAG, ""); // Blank line for debugging
+        //ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+        //ESP_LOGI("ENC", "Pos no div: %f", ((float)(right_encoder.position)));
+        //ESP_LOGI(TAG, ""); // Blank line for debugging
         
         
-        ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-        ESP_LOGI("ENC", "Pos nhow much voltage o div: %f", ((float)(left_encoder.position)));
-        ESP_LOGI(TAG, ""); // Blank line for debugging
+        //ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+        // ESP_LOGI("ENC", "Pos nhow much voltage o div: %f", ((float)(left_encoder.position)));
 
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        //vTaskDelay(2000 / portTICK_PERIOD_MS);
         
     }
-    */
 }
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
@@ -98,6 +122,15 @@ extern "C" void app_main(void)
     radio.setSpreadingFactor(12);
 }
 */
+void encoder_task(void* pvParameter)
+{
+    while(1)
+    {
+        ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+        ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
 
 void initialise(rr_state_t state)
 {
@@ -131,9 +164,10 @@ void initialise(rr_state_t state)
         ESP_LOGI(TAG, "Encoder Service Starting");
         init_encoder(&left_encoder);
         init_encoder(&right_encoder);
+        xTaskCreate(encoder_task, "encoder_task", 2048, NULL, 5, NULL);
         //encoder_service();
     }
     
-    // initialise_drivetrain();
+    initialise_drivetrain();
     // launch_rr_os_service();
 }
