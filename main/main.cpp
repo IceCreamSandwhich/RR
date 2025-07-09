@@ -50,24 +50,27 @@ extern "C" void app_main(void)
 
     // Initialising peripherals
     initialise(state);
-    // // 3. Move forward at ~50% speed for 2 seconds
-    // ESP_LOGI(TAG, "Moving forward");
-    // speed_callback(512, 512);  // Move both motors forward
-    // vTaskDelay(2000 / portTICK_PERIOD_MS);
+    while (1) {
+        // 1. Stop
+        ESP_LOGI(TAG, "Stopping");
+        speed_callback(0, 0);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        // 2. Move forward at ~50% speed for 2 seconds
+        ESP_LOGI(TAG, "Moving forward");
+        speed_callback(-512, -512);  // Move both motors forward
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
 
-    // 4. Move backward for 2 seconds
-    ESP_LOGI(TAG, "Moving backward");
-    speed_callback(-512, -512);  // Reverse both motors
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+        // 3. Move backward for 2 seconds
+        ESP_LOGI(TAG, "Moving backward");
+        speed_callback(512, 512);  // Reverse both motors
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
 
-    // // 5. Spin in place (left forward, right backward)
-    // ESP_LOGI(TAG, "Spinning");
-    // speed_callback(512, -512);
-    // vTaskDelay(2000 / portTICK_PERIOD_MS);
+        // 4. Spin in place (left forward, right backward)
+        ESP_LOGI(TAG, "Spinning");
+        speed_callback(512, -512);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
 
-    // // 6. Stop
-    // ESP_LOGI(TAG, "Stopping");
-    // speed_callback(0, 0);
+    }
 
     // while (1)
     // {

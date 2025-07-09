@@ -8,7 +8,6 @@ bno08x_ang_vel_t omega;
 
 static const char *TAG = "IMU";
 
-
 void init_imu()
 {
     ESP_LOGI(TAG, "IMU Enabled");
@@ -22,7 +21,7 @@ void init_imu()
     imu.rpt.linear_accelerometer.enable(100000UL);  
     imu.rpt.accelerometer.enable(100000UL);
     imu.rpt.cal_magnetometer.enable(100000UL);
- 
+    //ESP_LOGI(TAG, "IMU finished enabling");
 
 }
 
