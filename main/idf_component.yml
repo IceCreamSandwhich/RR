@@ -16,3 +16,4 @@ dependencies:
   #   public: true
   espressif/led_indicator: ^1.0.0
   jgromes/radiolib: ^7.1.2
+  espressif/esp_websocket_client: '*'

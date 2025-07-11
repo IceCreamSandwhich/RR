@@ -9,6 +9,16 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 1.1.1
+  espressif/esp_websocket_client:
+    component_hash: f77326f0e1c38da4e9c97e17c5d649b0dd13027f2645e720e48db269638fd622
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.4.0
   espressif/led_indicator:
     component_hash: 5b2531835a989825c0dc94465e3481086473e086dca109b99bea5605d8e70396
     dependencies:
@@ -40,7 +50,7 @@ dependencies:
   idf:
     source:
       type: idf
-    version: 5.4.1
+    version: 5.4.2
   jgromes/radiolib:
     component_hash: 681ab971a0980f25c27d8dc352a058157a6448bae7a1b835fb8266bc5406b589
     dependencies:
@@ -52,9 +62,10 @@ dependencies:
       type: service
     version: 7.2.0
 direct_dependencies:
+- espressif/esp_websocket_client
 - espressif/led_indicator
 - idf
 - jgromes/radiolib
-manifest_hash: 5616641c1d004a3e2e6d4625a382317f92618d288276441d61535f1b20915630
+manifest_hash: e153972ccd3c08ca3e645d50a5af52a81b1459112636f6ff8170589c2f55acef
 target: esp32s3
 version: 2.0.0

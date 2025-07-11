@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include <RadioLib.h>
@@ -210,3 +211,5 @@ private:
     int8_t spiCS;
     spi_device_handle_t spi;
 };
+
+*/

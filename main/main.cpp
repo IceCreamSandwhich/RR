@@ -24,8 +24,10 @@
 #include "include/encoder.h"
 #include "include/led.h"
 #include "include/events.h"
-#include "RadioLibCustomHAL.hpp"
-#include "wifi_service.h"
+#include "include/RadioLibCustomHAL.hpp"
+#include "include/wifi_service.h"
+#include "include/webserver_service.h"
+#include "include/index.h"
 
 static const constexpr char *TAG = "MAIN";
 
@@ -69,41 +71,7 @@ extern "C" void app_main(void)
     //     ESP_LOGI(TAG, "Spinning");
     //     speed_callback(512, -512);
     //     vTaskDelay(5000 / portTICK_PERIOD_MS);
-
     // }
-
-    // while (1)
-    // {
-    //     ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-    //     ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // }
-
-    // }
-
-    //vTaskDelay(2000 / portTICK_PERIOD_MS);
-                
-    // while (1)
-    {
-        // Wait for events to be added to the queue
-        // rr_os_event_handler();
-        //printf("Right Encoder Position: %f\n ", (float)(right_encoder.position / 1));
-        //printf("Left Encoder Position: %f\n", (float)(left_encoder.position / 1));
-        //ESP_LOGI("ENC", "Right Pos: %d, Right A: %d, B: %d ;-;", right_encoder.position, gpio_get_level(right_encoder.pin_a), gpio_get_level(right_encoder.pin_b));
-        //ESP_LOGI("ENC", "Left Pos: %d, A: %d, B: %d ",left_encoder.position, gpio_get_level(left_encoder.pin_a), gpio_get_level(left_encoder.pin_b));
-
-        
-        //ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-        //ESP_LOGI("ENC", "Pos no div: %f", ((float)(right_encoder.position)));
-        //ESP_LOGI(TAG, ""); // Blank line for debugging
-        
-        
-        //ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-        // ESP_LOGI("ENC", "Pos nhow much voltage o div: %f", ((float)(left_encoder.position)));
-
-        //vTaskDelay(2000 / portTICK_PERIOD_MS);
-        
-    }
 }
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
@@ -140,6 +108,7 @@ void initialise(rr_state_t state)
     // WiFi for esp as AP
     if (state.wifi_enabled){
         wifi_init_softap();
+        init_ws();
     }
 
     /* Not using Radio right now if (state.radio_enabled)
@@ -147,7 +116,7 @@ void initialise(rr_state_t state)
         initialise_radio();
     } 
     */
-    
+
     if (state.imu_enabled)
     {
         init_imu();
