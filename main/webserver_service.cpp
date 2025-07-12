@@ -11,7 +11,7 @@
 #include <esp_http_server.h>
 #include <cstring>  // For memset, strcmp
 #include <cstdlib>  // For malloc, calloc, free
-//#include "index.h"
+#include "index.h"
 
 static const char *TAG = "ws_echo_server";
 
@@ -59,19 +59,21 @@ esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
 }
 
 //Handler for accessing wireless driving webpage 
-// static esp_err_t index_get_handler(httpd_req_t *req)
-// {
-//     // httpd_resp_set_type(req, "text/html");
-//     httpd_resp_send(req, HTML_CONTENT, HTTPD_RESP_USE_STRLEN);
-//     return ESP_OK;
-// }
+static esp_err_t index_get_handler(httpd_req_t *req)
+{
+    // httpd_resp_set_type(req, "text/html");
+    httpd_resp_send(req, HTML_CONTENT, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
 
-// static const httpd_uri_t index_uri = {
-//     .uri       = "/",
-//     .method    = HTTP_GET,
-//     .handler   = index_get_handler,
-//     .user_ctx  = NULL
-// };
+static const httpd_uri_t index_uri = {
+    .uri       = "/",
+    .method    = HTTP_GET,
+    .handler   = index_get_handler,
+    .user_ctx  = NULL
+};
+
+
 
 // WebSocket handler that echoes messages and supports async trigger
 static esp_err_t echo_handler(httpd_req_t *req)
@@ -92,8 +94,6 @@ static esp_err_t echo_handler(httpd_req_t *req)
         return ret;
     }
 
-    ESP_LOGI(TAG, "frame len is %d", ws_pkt.len);
-
     if (ws_pkt.len) {
         buf = (uint8_t *)calloc(1, ws_pkt.len + 1);
         if (buf == NULL) {
@@ -109,17 +109,13 @@ static esp_err_t echo_handler(httpd_req_t *req)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
+        ESP_LOGI(TAG, "Got command: %s", ws_pkt.payload);
+        
+        // Here you would process the command (0, 1, 2, 4, 8)
+        // and take appropriate action in your application
     }
 
-    ESP_LOGI(TAG, "Packet type: %d", ws_pkt.type);
-
-    if (ws_pkt.type == HTTPD_WS_TYPE_TEXT &&
-        strcmp((char *)ws_pkt.payload, "Trigger async") == 0) {
-        free(buf);
-        return trigger_async_send(req->handle, req);
-    }
-
+    // Echo back the received command
     ret = httpd_ws_send_frame(req, &ws_pkt);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
@@ -151,14 +147,13 @@ httpd_handle_t start_webserver(void)
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);
-        //httpd_register_uri_handler(server, &index_uri);
+        httpd_register_uri_handler(server, &index_uri);  // Register the HTML handler
         return server;
     }
 
     ESP_LOGI(TAG, "Error Starting server!");
     return NULL;
 }
-
 // Stops the WebSocket-enabled HTTP server
 esp_err_t stop_webserver(httpd_handle_t server)
 {

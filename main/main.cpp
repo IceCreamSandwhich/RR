@@ -46,9 +46,9 @@ extern "C" void app_main(void)
     state.twai_active = false;
     state.led_enabled = false;
     state.radio_enabled = false;
-    state.wifi_enabled = false;
-    state.encoder_enabled = true; // need to set to true
-    state.imu_enabled = true;
+    state.wifi_enabled = true;
+    state.encoder_enabled = false; // need to set to true
+    state.imu_enabled = false;
 
     // Initialising peripherals
     initialise(state);
