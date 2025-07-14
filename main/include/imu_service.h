@@ -8,4 +8,4 @@ void init_imu();
 void imu_loop(void *pvParameter);
 BaseType_t imu_service(void);
 void launch_rr_os_service();
-void buf_to_text();
+void imu_buf_to_text();

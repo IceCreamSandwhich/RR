@@ -11,6 +11,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "esp_spiffs.h"
 
 // Component Headers
 #include "BNO08x.hpp"
@@ -30,6 +31,7 @@
 #include "include/wirelessDrive_website.h"
 
 static const constexpr char *TAG = "MAIN";
+// char buf[512];
 
 void initialise(rr_state_t state); 
 void test_drive_code();
@@ -44,12 +46,49 @@ extern "C" void app_main(void)
     state.led_enabled = false;
     state.radio_enabled = false;
     state.wifi_enabled = true;
-    state.encoder_enabled = true;
+    state.encoder_enabled = false; // need to set to true
     state.imu_enabled = false;
+
+    // mount spiffs
+    esp_vfs_spiffs_conf_t config = {
+        .base_path = "/storage",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true,
+    };
+    esp_err_t result = esp_vfs_spiffs_register(&config);
+    if (result != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(result));
+        return; 
+    }
 
     // Initialising peripherals
     initialise(state);
-    //test_drive_code();
+    // while (1) {
+    //     // 1. Stop
+    //     ESP_LOGI(TAG, "Stopping");
+    //     speed_callback(0, 0);
+    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
+    //     // 2. Move forward at ~50% speed for 2 seconds
+    //     ESP_LOGI(TAG, "Moving forward");
+    //     speed_callback(-512, -512);  // Move both motors forward
+    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+    //     // 3. Move backward for 2 seconds
+    //     ESP_LOGI(TAG, "Moving backward");
+    //     speed_callback(512, 512);  // Reverse both motors
+    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+    //     // 4. Spin in place (left forward, right backward)
+    //     ESP_LOGI(TAG, "Spinning");
+    //     speed_callback(512, -512);
+    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
+    // }
+
+    // loop forever to keep spiffs mounted
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
@@ -99,7 +138,7 @@ void test_drive_code()
 
 void initialise(rr_state_t state)
 {
-    // WiFi for esp as AP and webservers
+    // WiFi for esp as AP
     if (state.wifi_enabled){
         wifi_init_softap();
         init_ws();
@@ -130,7 +169,8 @@ void initialise(rr_state_t state)
         ESP_LOGI(TAG, "Encoder Service Starting");
         init_encoder(&left_encoder);
         init_encoder(&right_encoder);
-        encoder_service();
+        xTaskCreate(encoder_task, "encoder_task", 2048, NULL, 5, NULL);
+        //encoder_service();
     }
     
     initialise_drivetrain();

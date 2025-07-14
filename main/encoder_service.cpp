@@ -9,11 +9,6 @@
 
 QueueHandle_t encoder_queue;
 
-encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B}; 
-encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
-
-
-
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
 void IRAM_ATTR encoder_isr_handler(void *arg)
 {
@@ -73,18 +68,17 @@ void init_encoder(encoder_t* encoder)
     gpio_isr_handler_add(encoder->pin_b, encoder_isr_handler, (void *)encoder);
 }
 
-void encoder_task(void* pvParameter)
-{
-    (void)pvParameter; //pvparameter is not being used. Cast to void to match definition in header
-    while(1)
-    {
-        ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-        ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-}
+// void encoder_task(void* pvParameter)
+// {
+//     while(1)
+//     {
+//         ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+//         ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+//         vTaskDelay(1000 / portTICK_PERIOD_MS);
+//     }
+// }
 
-BaseType_t encoder_service(void)
+BaseType_t encoder_service(encoder_t *encoder)
 {
     BaseType_t status = xTaskCreate(
         encoder_task,

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "esp_spiffs.h"
 #include "esp_log.h"
+#include <string.h>
 
 
 
@@ -19,7 +20,7 @@ static const char *TAG = "IMU";
 
 void init_imu()
 {
-    ESP_LOGI(TAG, "IMU Enabled");
+    ESP_LOGI(TAG, "IMU enabled");
     // initialize imu
     if (!imu.initialize())
     {
@@ -27,10 +28,9 @@ void init_imu()
         return;
     }
     imu.rpt.rv_gyro_integrated.enable(100000UL); // 100,000us == 100ms report interval
-    imu.rpt.linear_accelerometer.enable(100000UL);  
+    imu.rpt.linear_accelerometer.enable(100000UL);
     imu.rpt.accelerometer.enable(100000UL);
     imu.rpt.cal_magnetometer.enable(100000UL);
-
 }
 
 void imu_loop(void *pvParameter)
@@ -99,11 +99,9 @@ void imu_loop(void *pvParameter)
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-        // print buf
-        ESP_LOGI(TAG, "%s", buf);
-
         // add to text file 
-        buf_to_text();
+        strcat(buf, "hello world\n");
+        imu_buf_to_text();
     }
 }
 
@@ -129,58 +127,31 @@ BaseType_t imu_service(void)
     return status;
 }
 
-void buf_to_text() {
-    // int fd; /* file descriptor */
-    // int nbytes; /* number of bytes read */
-    // int retval; /* return value */
+void imu_buf_to_text() {  
+    // write from buf to file
+    FILE *f = fopen("/storage/IMU_data.txt", "a");  // "a" to append
+    if (f == NULL) {
+    ESP_LOGE("FILE", "Failed to open file for writing");
+    } 
+    else {
+        fwrite(buf, 1, strlen(buf), f);  // write the buffer
+        fclose(f);
+        ESP_LOGI("FILE", "Data written to file");
 
-    // if ((fd = open("/Users/miamoto/Documents/Github/RR/main/data_file.txt", O_WRONLY | O_CREAT)) < 0) {
-    //     perror("open");
-    //     exit(1);
-    // }
-    // if ((nbytes = write(fd, buf, sizeof(buf))) < 0) {
-    //     perror("write");
-    //     exit(1);
-    // }
-    // // close file
-    // if ((retval = close(fd)) < 0) {
-    //     perror("close");
-    //     exit(1);
-    // }
-    esp_vfs_spiffs_conf_t config = {
-        .base_path = "/spiffs",
-        .partition_label = NULL,
-        .max_files = 5,
-        .format_if_mount_failed = true,
-    };
-    esp_vfs_spiffs_register(&config);
-    /*Create file with name hello.txt */
-    ESP_LOGI(TAG, "Creating New file: data.txt");
-    FILE *f = fopen("/spiffs/data.txt", "w");
-    if (f == NULL)
-    {
-        ESP_LOGE(TAG, "Failed to open file for writing");
-        return;
-    }
-    ESP_LOGI(TAG, "Writing data to file: data.txt");
-    fprintf(f, buf);  // write data to data.txt file
-    fclose(f);
-    ESP_LOGI(TAG, "File written");
-    /* read data from data.txt file */
-    // ESP_LOGE(TAG, "Reading data from file: data.txt");
-    // FILE *file = fopen("/spiffs/data.txt", "r");
-    // if (file == NULL)
-    // {
-    //     ESP_LOGE(TAG, "File does not exist!");
-    // }
-    // else
-    // {
-    //     char line[256];
-    //     while (fgets(line, sizeof(line), file) != NULL)
-    //     {
-    //         printf(line);
+    }   
+
+    // read into terminal
+    // f = fopen("/storage/IMU_data.txt", "r");
+    // if (f == NULL) {
+    //     ESP_LOGE("FILE", "Failed to open file for reading");
+    // } else {
+    //     ESP_LOGI("FILE", "Reading file contents:");
+    //     char line[128];
+    //     while (fgets(line, sizeof(line), f)) {
+    //         printf("%s", line);  // or use ESP_LOGI if you prefer
     //     }
-    //     fclose(file);
+    //     fclose(f);
     // }
-    esp_vfs_spiffs_unregister(NULL);
+
+    // esp_vfs_spiffs_unregister(NULL);
 }
