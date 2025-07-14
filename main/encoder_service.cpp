@@ -8,6 +8,7 @@
 #define TAG "ENCODER_SERVICE"
 
 QueueHandle_t encoder_queue;
+// char buf[512];
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
 static void IRAM_ATTR encoder_isr_handler(void *arg)
@@ -67,7 +68,7 @@ void init_encoder(encoder_t* encoder)
     gpio_isr_handler_add(encoder->pin_b, encoder_isr_handler, (void *)encoder);
 }
 
-// void encoder_task(void* pvParameter)
+// void encoder_task()
 // {
 //     while(1)
 //     {
@@ -77,7 +78,7 @@ void init_encoder(encoder_t* encoder)
 //     }
 // }
 
-BaseType_t encoder_service(encoder_t *encoder)
+BaseType_t encoder_service(encoder_t* encoder)
 {
     BaseType_t status = xTaskCreate(
         encoder_task,

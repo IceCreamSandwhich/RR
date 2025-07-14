@@ -25,18 +25,18 @@ struct async_resp_arg {
 static void ws_async_send(void *arg)
 {
     static const char *data = "Async data";
-    struct async_resp_arg *resp_arg = (struct async_resp_arg *)arg;
-    httpd_handle_t hd = resp_arg->hd;
+    struct async_resp_arg *resp_arg = (struct async_resp_arg *)arg; // cast back to struct type
+    httpd_handle_t hd = resp_arg->hd;                              
     int fd = resp_arg->fd;
 
     httpd_ws_frame_t ws_pkt;
-    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.payload = (uint8_t *)data;
-    ws_pkt.len = strlen(data);
-    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t)); // creates and zeroes out websocket frame
+    ws_pkt.payload = (uint8_t *)data;             // populates frame with string
+    ws_pkt.len = strlen(data);                    // and marks it as a text frame
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT; 
 
-    httpd_ws_send_frame_async(hd, fd, &ws_pkt);
-    free(resp_arg);
+    httpd_ws_send_frame_async(hd, fd, &ws_pkt);   // sends frame over websocket
+    free(resp_arg);                               // frees memory
 }
 
 // Triggers an async message to be sent over WebSocket
@@ -58,7 +58,7 @@ esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
     return ret;
 }
 
-//Handler for accessing wireless driving webpage 
+// Handler for accessing wireless driving webpage 
 static esp_err_t index_get_handler(httpd_req_t *req)
 {
     // httpd_resp_set_type(req, "text/html");
@@ -73,6 +73,44 @@ static const httpd_uri_t index_uri = {
     .user_ctx  = NULL
 };
 
+static esp_err_t imu_handler(httpd_req_t *req)
+{
+    FILE *f = fopen("/storage/IMU_data.txt", "r");
+    if (!f) {
+        ESP_LOGE("HTTP", "Failed to open IMU_data.txt for reading");
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    char buf[256];
+    size_t chunksize;
+    httpd_resp_set_type(req, "text/plain");
+
+    // Optional: forces browser to download instead of view
+    // httpd_resp_set_hdr(req, "Content-Disposition", "attachment; filename=\"IMU_data.txt\"");
+
+    while ((chunksize = fread(buf, 1, sizeof(buf), f)) > 0) {
+        if (httpd_resp_send_chunk(req, buf, chunksize) != ESP_OK) {
+            fclose(f);
+            ESP_LOGE("HTTP", "Failed to send file chunk");
+            return ESP_FAIL;
+        }
+    }
+
+    fclose(f);
+    httpd_resp_send_chunk(req, NULL, 0); // End of response
+    return ESP_OK;
+    
+}
+
+
+// Register URI for imu_data
+static const httpd_uri_t imu_uri = {
+    .uri       = "/imu",         // Access it via http://<esp_ip>/imu
+    .method    = HTTP_GET,
+    .handler   = imu_handler,
+    .user_ctx  = NULL
+};
 
 
 // WebSocket handler that echoes messages and supports async trigger
@@ -83,39 +121,40 @@ static esp_err_t echo_handler(httpd_req_t *req)
         return ESP_OK;
     }
 
+    // init frame to receive data (text)
     httpd_ws_frame_t ws_pkt;
     uint8_t *buf = NULL;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
 
-    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0); // check frame len
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
 
     if (ws_pkt.len) {
-        buf = (uint8_t *)calloc(1, ws_pkt.len + 1);
+        buf = (uint8_t *)calloc(1, ws_pkt.len + 1); // memory to store incoming message + '\0'
         if (buf == NULL) {
             ESP_LOGE(TAG, "Failed to calloc memory for buf");
             return ESP_ERR_NO_MEM;
         }
 
         ws_pkt.payload = buf;
-        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len); // read frame data into buf
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
             free(buf);
             return ret;
         }
 
-        ESP_LOGI(TAG, "Got command: %s", ws_pkt.payload);
+        ESP_LOGI(TAG, "Got command: %s", ws_pkt.payload); // print command
         
         // Here you would process the command (0, 1, 2, 4, 8)
         // and take appropriate action in your application
     }
 
-    // Echo back the received command
+    // Echo back the received command to client
     ret = httpd_ws_send_frame(req, &ws_pkt);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
@@ -148,6 +187,7 @@ httpd_handle_t start_webserver(void)
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &ws);
         httpd_register_uri_handler(server, &index_uri);  // Register the HTML handler
+        httpd_register_uri_handler(server, &imu_uri);    // IMU file download
         return server;
     }
 
@@ -160,7 +200,7 @@ esp_err_t stop_webserver(httpd_handle_t server)
     return httpd_stop(server);
 }
 
-// Handles network disconnection
+// Handles network disconnection (when wifi disconnects)
 void disconnect_handler(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data)
 {
@@ -175,7 +215,7 @@ void disconnect_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-// Handles network connection
+// Handles network connection (when wifi connects)
 void connect_handler(void *arg, esp_event_base_t event_base,
                      int32_t event_id, void *event_data)
 {
