@@ -49,6 +49,19 @@ extern "C" void app_main(void)
     state.encoder_enabled = false; // need to set to true
     state.imu_enabled = false;
 
+    // mount spiffs
+    esp_vfs_spiffs_conf_t config = {
+        .base_path = "/storage",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true,
+    };
+    esp_err_t result = esp_vfs_spiffs_register(&config);
+    if (result != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(result));
+        return; 
+    }
+
     // Initialising peripherals
     initialise(state);
     // while (1) {
@@ -71,6 +84,11 @@ extern "C" void app_main(void)
     //     speed_callback(512, -512);
     //     vTaskDelay(5000 / portTICK_PERIOD_MS);
     // }
+
+    // loop forever to keep spiffs mounted
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
