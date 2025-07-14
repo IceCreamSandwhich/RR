@@ -9,8 +9,13 @@
 
 QueueHandle_t encoder_queue;
 
+encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B}; 
+encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
+
+
+
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
-static void IRAM_ATTR encoder_isr_handler(void *arg)
+void IRAM_ATTR encoder_isr_handler(void *arg)
 {
     encoder_t *encoder = (encoder_t *)arg;
     
@@ -23,22 +28,22 @@ static void IRAM_ATTR encoder_isr_handler(void *arg)
     {
         if (encoder->lastEncoding == 0b01)
         {
-            encoder->position++ ;
+            encoder->position = encoder->position + 1 ;
         }
         else if (encoder->lastEncoding == 0b10)
         {
-            encoder->position--;
+            encoder->position = encoder->position - 1;
         }
     }
     else if (encoding == 0b11)
     {
         if (encoder->lastEncoding == 0b10)
         {
-            encoder->position++;
+            encoder->position = encoder->position + 1;
         }
         else if (encoder->lastEncoding == 0b01)
         {
-            encoder->position--;
+            encoder->position = encoder -> position - 1;
         }
     }
 
@@ -47,6 +52,7 @@ static void IRAM_ATTR encoder_isr_handler(void *arg)
 
 void init_encoder(encoder_t* encoder)
 {
+    static bool isr_service_installed = false;
     ESP_LOGI(TAG, "Setting up pins %d and %d", encoder->pin_a, encoder->pin_b);
 
     // Configure input pins
@@ -67,23 +73,24 @@ void init_encoder(encoder_t* encoder)
     gpio_isr_handler_add(encoder->pin_b, encoder_isr_handler, (void *)encoder);
 }
 
-// void encoder_task(void* pvParameter)
-// {
-//     while(1)
-//     {
-//         ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-//         ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-//         vTaskDelay(1000 / portTICK_PERIOD_MS);
-//     }
-// }
+void encoder_task(void* pvParameter)
+{
+    (void)pvParameter; //pvparameter is not being used. Cast to void to match definition in header
+    while(1)
+    {
+        ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+        ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
 
-BaseType_t encoder_service(encoder_t *encoder)
+BaseType_t encoder_service(void)
 {
     BaseType_t status = xTaskCreate(
         encoder_task,
         "encoder_task",
         4096,
-        (void *)encoder,
+        NULL,
         5,
         NULL);
 

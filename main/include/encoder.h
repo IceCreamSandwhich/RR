@@ -12,17 +12,17 @@ typedef struct encoder_t {
     gpio_num_t pin_b;
 } encoder_t;
 
-
 #define LEFT_ENCODER_A GPIO_NUM_40 
 #define LEFT_ENCODER_B GPIO_NUM_41  
 
 #define RIGHT_ENCODER_A GPIO_NUM_4 
 #define RIGHT_ENCODER_B GPIO_NUM_42 
+#define CPR (1375) //(Manually Counted for one full rotation for our motors. Change as needed) 
 
 
-#define CPR (1375)   //(Manually Counted for one full rotation for our motors change as needed) 
+extern encoder_t left_encoder;
+extern encoder_t right_encoder; 
 
-// void IRAM_ATTR encoder_isr_handler(void *arg);
 void init_encoder(encoder_t* encoder);
-void encoder_task(void* pvParameter);
+void encoder_task(void);
 BaseType_t encoder_service(void);
