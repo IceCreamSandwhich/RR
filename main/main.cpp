@@ -28,42 +28,26 @@
 #include "include/RadioLibCustomHAL.hpp"
 #include "include/wifi_service.h"
 #include "include/webserver_service.h"
-#include "include/index.h"
+#include "include/wirelessControl_website.h"
 
 static const constexpr char *TAG = "MAIN";
 // char buf[512];
 
 void initialise(rr_state_t state); 
-
-encoder_t left_encoder = {0, 0b00, LEFT_ENCODER_A, LEFT_ENCODER_B}; 
-encoder_t right_encoder = {0, 0b00, RIGHT_ENCODER_A, RIGHT_ENCODER_B};
-
+void test_drive_code();
 
 extern "C" void app_main(void)
 {
     ESP_LOGI(TAG, "Starting app_main");
 
-    // Creating events queue
+    // Creating events queue (Set to True when you want a service working)
     state.connected = false;
     state.twai_active = false;
     state.led_enabled = false;
     state.radio_enabled = false;
     state.wifi_enabled = true;
-    state.encoder_enabled = false; 
-    state.imu_enabled = true;
-
-    // mount spiffs
-    esp_vfs_spiffs_conf_t config = {
-        .base_path = "/storage",
-        .partition_label = NULL,
-        .max_files = 5,
-        .format_if_mount_failed = true,
-    };
-    esp_err_t result = esp_vfs_spiffs_register(&config);
-    if (result != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(result));
-        return; 
-    }
+    state.encoder_enabled = false; // need to set to true
+    state.imu_enabled = false;
 
     // Initialising peripherals
     initialise(state);
@@ -87,17 +71,12 @@ extern "C" void app_main(void)
     //     speed_callback(512, -512);
     //     vTaskDelay(5000 / portTICK_PERIOD_MS);
     // }
-
-    // loop forever to keep spiffs mounted
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    // esp_vfs_spiffs_unregister(NULL);
 }
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
 
 /*id initialise_radio()
+
 {
     CLK, MISO, MOSI, CS
     RadioLibCustomHAL hal = RadioLibCustomHAL(1, 2, 3, 5);
@@ -114,18 +93,38 @@ extern "C" void app_main(void)
     radio.setSpreadingFactor(12);
 }
 */
-void encoder_task(void* pvParameter)
+
+void test_drive_code()
 {
-    while(1)
-    {
-        ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-        ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    while (1) {
+        // 1. Stop
+        ESP_LOGI(TAG, "Stopping");
+        speed_callback(0, 0);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        // 2. Move forward at ~50% speed for 2 seconds
+        ESP_LOGI(TAG, "Moving forward");
+        speed_callback(-512, -512);  // Move both motors forward
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+        // 3. Move backward for 2 seconds
+        ESP_LOGI(TAG, "Moving backward");
+        speed_callback(512, 512);  // Reverse both motors
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+        // 4. Spin in place (left forward, right backward)
+        ESP_LOGI(TAG, "Spinning");
+        speed_callback(512, -512);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
 
 void initialise(rr_state_t state)
 {
+    // WiFi for esp as AP
+    if (state.wifi_enabled){
+        wifi_init_softap();
+        init_ws();
+    }
 
     /* Not using Radio right now if (state.radio_enabled)
     { 
@@ -153,15 +152,9 @@ void initialise(rr_state_t state)
         init_encoder(&left_encoder);
         init_encoder(&right_encoder);
         xTaskCreate(encoder_task, "encoder_task", 2048, NULL, 5, NULL);
-        // encoder_service(&right_encoder, &left_encoder);
-    }
-
-    // WiFi for esp as AP
-    if (state.wifi_enabled){
-        wifi_init_softap();
-        init_ws();
+        //encoder_service();
     }
     
-     initialise_drivetrain();
+    initialise_drivetrain();
     // launch_rr_os_service();
 }

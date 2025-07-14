@@ -8,10 +8,9 @@
 #define TAG "ENCODER_SERVICE"
 
 QueueHandle_t encoder_queue;
-// char buf[512];
 
 // ISR handler must not use non-ISR-safe functions like `gpio_get_level` unless GPIO is input-only and stable
-static void IRAM_ATTR encoder_isr_handler(void *arg)
+void IRAM_ATTR encoder_isr_handler(void *arg)
 {
     encoder_t *encoder = (encoder_t *)arg;
     
@@ -24,22 +23,22 @@ static void IRAM_ATTR encoder_isr_handler(void *arg)
     {
         if (encoder->lastEncoding == 0b01)
         {
-            encoder->position++ ;
+            encoder->position = encoder->position + 1 ;
         }
         else if (encoder->lastEncoding == 0b10)
         {
-            encoder->position--;
+            encoder->position = encoder->position - 1;
         }
     }
     else if (encoding == 0b11)
     {
         if (encoder->lastEncoding == 0b10)
         {
-            encoder->position++;
+            encoder->position = encoder->position + 1;
         }
         else if (encoder->lastEncoding == 0b01)
         {
-            encoder->position--;
+            encoder->position = encoder -> position - 1;
         }
     }
 
@@ -48,6 +47,7 @@ static void IRAM_ATTR encoder_isr_handler(void *arg)
 
 void init_encoder(encoder_t* encoder)
 {
+    static bool isr_service_installed = false;
     ESP_LOGI(TAG, "Setting up pins %d and %d", encoder->pin_a, encoder->pin_b);
 
     // Configure input pins
@@ -68,7 +68,7 @@ void init_encoder(encoder_t* encoder)
     gpio_isr_handler_add(encoder->pin_b, encoder_isr_handler, (void *)encoder);
 }
 
-// void encoder_task()
+// void encoder_task(void* pvParameter)
 // {
 //     while(1)
 //     {
@@ -78,13 +78,13 @@ void init_encoder(encoder_t* encoder)
 //     }
 // }
 
-BaseType_t encoder_service(encoder_t* encoder)
+BaseType_t encoder_service(encoder_t *encoder)
 {
     BaseType_t status = xTaskCreate(
         encoder_task,
         "encoder_task",
         4096,
-        (void *)encoder,
+        NULL,
         5,
         NULL);
 

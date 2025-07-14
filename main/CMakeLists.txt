@@ -5,4 +5,3 @@ idf_component_register(SRCS "twai_test_main.c" "webserver_service.cpp" "wifi_ser
                      "encoder_service.cpp"
                      "index.cpp"
                     INCLUDE_DIRS "include")
-spiffs_create_partition_image(storage ../partition FLASH_IN_PROJECT)
