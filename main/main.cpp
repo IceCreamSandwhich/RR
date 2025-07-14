@@ -46,8 +46,8 @@ extern "C" void app_main(void)
     state.led_enabled = false;
     state.radio_enabled = false;
     state.wifi_enabled = true;
-    state.encoder_enabled = false; // need to set to true
-    state.imu_enabled = false;
+    state.encoder_enabled = false;
+    state.imu_enabled = true;
 
     // mount spiffs
     esp_vfs_spiffs_conf_t config = {
@@ -64,27 +64,8 @@ extern "C" void app_main(void)
 
     // Initialising peripherals
     initialise(state);
-    // while (1) {
-    //     // 1. Stop
-    //     ESP_LOGI(TAG, "Stopping");
-    //     speed_callback(0, 0);
-    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    //     // 2. Move forward at ~50% speed for 2 seconds
-    //     ESP_LOGI(TAG, "Moving forward");
-    //     speed_callback(-512, -512);  // Move both motors forward
-    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
-
-    //     // 3. Move backward for 2 seconds
-    //     ESP_LOGI(TAG, "Moving backward");
-    //     speed_callback(512, 512);  // Reverse both motors
-    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
-
-    //     // 4. Spin in place (left forward, right backward)
-    //     ESP_LOGI(TAG, "Spinning");
-    //     speed_callback(512, -512);
-    //     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    // }
-
+    //test_drive_code();
+    
     // loop forever to keep spiffs mounted
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -118,16 +99,16 @@ void test_drive_code()
         // 1. Stop
         ESP_LOGI(TAG, "Stopping");
         speed_callback(0, 0);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
         // 2. Move forward at ~50% speed for 2 seconds
         ESP_LOGI(TAG, "Moving forward");
         speed_callback(-512, -512);  // Move both motors forward
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
 
         // 3. Move backward for 2 seconds
         ESP_LOGI(TAG, "Moving backward");
         speed_callback(512, 512);  // Reverse both motors
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
 
         // 4. Spin in place (left forward, right backward)
         ESP_LOGI(TAG, "Spinning");
@@ -169,8 +150,7 @@ void initialise(rr_state_t state)
         ESP_LOGI(TAG, "Encoder Service Starting");
         init_encoder(&left_encoder);
         init_encoder(&right_encoder);
-        xTaskCreate(encoder_task, "encoder_task", 2048, NULL, 5, NULL);
-        //encoder_service();
+        encoder_service();
     }
     
     initialise_drivetrain();
