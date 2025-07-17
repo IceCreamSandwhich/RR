@@ -3,18 +3,17 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-
 // ESP-IDF Headers
 #include "esp_err.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "esp_spiffs.h"
+#include "nvs_flash.h"
 
-// Component Headers
-#include "BNO08x.hpp"
+// FreeRTOS Headers
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 
 // Project Headers
 #include "include/pins.h"
@@ -25,12 +24,10 @@
 #include "include/encoder.h"
 #include "include/led.h"
 #include "include/events.h"
-#include "include/RadioLibCustomHAL.hpp"
 #include "include/wifi_service.h"
 #include "include/webserver_service.h"
-#include "include/wirelessDrive_website.h"
 
-static const constexpr char *TAG = "MAIN";
+static const char *TAG = "MAIN";
 // char buf[512];
 
 void initialise(rr_state_t state); 
