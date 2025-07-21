@@ -7,7 +7,15 @@ const char *HTML_CONTENT = R"=====(
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=no">
 <title>Robot Wireless Control</title>
-<style type="text/css">
+
+<style type="text/css">  
+
+/* 
+This Section of the code starting with style type="text/css" and ending with /style is css style code that is written
+to create the buttons on the RR page. Adjust the layout and style of the buttons as you see fit.
+*/
+
+
 body { 
     text-align: center; 
     font-family: Arial, sans-serif;
@@ -65,6 +73,15 @@ button {
   color: white;
   padding: 10px 20px;
 }
+
+.button_autonomous {
+  position: fixed;    /* Fixed positioning relative to viewport */
+  left: 20px;         /* 20px from left edge */
+  bottom: 20px;       /* 20px from bottom */
+  background-color: #9C27B0; /* Purple */
+  z-index: 100;       /* Ensure it stays above other elements */
+}
+  
 .active {
   filter: brightness(85%);
   transform: scale(0.98);
@@ -78,15 +95,17 @@ button {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 </style>
+
 </head>
-<body>
-<h1>Robot Controller</h1>
+<body> 
+<h1>Robot Controller</h1> <!-- This is pure HTML defining the structure of the webpage. It includes buttons, headings, and containers that JavaScript will later interact with. -->
 <div id="container">
   <button id="0" class="control-button button_stop">STOP</button>
   <button id="1" class="control-button button_forward">FORWARD</button>
   <button id="2" class="control-button button_backward">BACKWARD</button>
   <button id="8" class="control-button button_right">RIGHT</button>
   <button id="4" class="control-button button_left">LEFT</button>
+  <button id="9" class="control-button button_autonomous">AUTONOMOUS</button>
 </div>
 
 <div id="status-panel">
@@ -96,12 +115,16 @@ button {
 </div>
 
 <script>
+/*Everything from here onwards is Javascript code that handles the functionality of the webpage and allows interactions 
+between the buttons on the page and the esp32 */
+
 // Command Constants
 const CMD_STOP     = 0;
 const CMD_FORWARD  = 1;
 const CMD_BACKWARD = 2;
 const CMD_LEFT     = 4;
 const CMD_RIGHT    = 8;
+const CMD_AUTONOMOUS = 9;
 
 // UI State
 let ws = null;
@@ -188,6 +211,11 @@ function handleKeyDown(e) {
     case ' ': // Spacebar for stop
       sendCommand(CMD_STOP);
       break;
+
+    case 'm': case 'M':  //'M' key (for "autonomous Mode")
+      document.querySelector('.button_autonomous').classList.add('active');
+      sendCommand(CMD_AUTONOMOUS);
+      break;
   }
 }
 
@@ -206,6 +234,10 @@ function handleKeyUp(e) {
       break;
     case 'ArrowRight': case 'd': case 'D':
       document.querySelector('.button_right').classList.remove('active');
+      break;
+    case 'm': case 'M':
+      document.querySelector('.button_autonomous').classList.remove('active');
+      sendCommand(CMD_STOP);
       break;
   }
   
@@ -278,6 +310,7 @@ function getCommandName(cmd) {
     case CMD_BACKWARD: return "Backward";
     case CMD_LEFT: return "Left Turn";
     case CMD_RIGHT: return "Right Turn";
+    case CMD_AUTONOMOUS: return "Autonomous Mode";
     default: return "Unknown";
   }
 }
@@ -285,6 +318,7 @@ function getCommandName(cmd) {
 // Initialize when page loads
 window.onload = init;
 </script>
+
 </body>
 </html>
 )=====";
