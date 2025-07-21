@@ -90,30 +90,6 @@ extern "C" void app_main(void)
 }
 */
 
-void test_drive_code()
-{
-    while (1) {
-        // 1. Stop
-        ESP_LOGI(TAG, "Stopping");
-        speed_callback(0, 0);
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-        // 2. Move forward at ~50% speed for 2 seconds
-        ESP_LOGI(TAG, "Moving forward");
-        speed_callback(-512, -512);  // Move both motors forward
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-        // 3. Move backward for 2 seconds
-        ESP_LOGI(TAG, "Moving backward");
-        speed_callback(512, 512);  // Reverse both motors
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-        // 4. Spin in place (left forward, right backward)
-        ESP_LOGI(TAG, "Spinning");
-        speed_callback(512, -512);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-    }
-}
-
 void initialise(rr_state_t state)
 {
     // WiFi for esp as AP
