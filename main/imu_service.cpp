@@ -6,15 +6,21 @@
 #include "esp_spiffs.h"
 #include "esp_log.h"
 #include <string.h>
-
+#include <math.h>
 
 
 static BNO08x imu;
 bno08x_quat_t quat;
 bno08x_euler_angle_t euler;
 bno08x_ang_vel_t omega;
-char buf[512];
-int buf_ret;
+char imu_buf[512];
+int imu_buf_ret;
+
+// imu data variables
+float roll = 0, pitch = 0, yaw = 0;
+float linx = 0, liny = 0, linz = 0;
+float angx = 0, angy = 0, angz = 0;
+float magx = 0, magy = 0, magz = 0;
 
 static const char *TAG = "IMU";
 
@@ -31,6 +37,7 @@ void init_imu()
     imu.rpt.linear_accelerometer.enable(100000UL);
     imu.rpt.accelerometer.enable(100000UL);
     imu.rpt.cal_magnetometer.enable(100000UL);
+    ESP_LOGI(TAG, "IMU enabled fr");
 }
 
 void imu_loop(void *pvParameter)
@@ -38,6 +45,11 @@ void imu_loop(void *pvParameter)
     UBaseType_t stack_remaining;
     while(1)
     {
+        // clear buf 
+        imu_buf[0] = '\0';
+        // get timestamp
+        imu_time_ms = esp_timer_get_time() / 1000;
+        time_to_buf(imu_time_ms);
         // block until new report is detected
         if (imu.data_available())
         {
@@ -49,48 +61,39 @@ void imu_loop(void *pvParameter)
             {
                 imu.rpt.rv_gyro_integrated.get(quat, omega);
                 euler = quat;
-
-                // write to buf
-                size_t len = strlen(buf);
-                if ((buf_ret = snprintf(buf + len, sizeof(buf) - len, "Roll: %f, Pitch: %f, Yaw: %f\n", euler.x, euler.y, euler.z)) < 0) {
-                    ESP_LOGE(TAG, "Failed to write to buffer");
-                }
                 // ESP_LOGI(TAG, "Roll: %f, Pitch: %f, Yaw: %f", euler.x, euler.y, euler.z);
+                roll = euler.x;
+                pitch = euler.y;
+                yaw = euler.z;
             }
 
             // Get linear acceleration data
             if (imu.rpt.linear_accelerometer.has_new_data())
             {
                 bno08x_accel_t lin_accel = imu.rpt.accelerometer.get();
-                // write to buf
-                size_t len = strlen(buf);
-                if ((buf_ret = snprintf(buf + len, sizeof(buf) - len, "Linear Accel: (x: %.2f y: %.2f z: %.2f)[m/s^2]\n", lin_accel.x, lin_accel.y, lin_accel.z)) < 0) {
-                    ESP_LOGE(TAG, "Failed to write to buffer");
-                }
                 // ESP_LOGI(TAG, "Linear Accel: (x: %.2f y: %.2f z: %.2f)[m/s^2]", lin_accel.x, lin_accel.y, lin_accel.z);
+                linx = lin_accel.x;
+                liny = lin_accel.y;
+                linz = lin_accel.z;
             }
 
             // Get Angular acceleration data
             if (imu.rpt.accelerometer.has_new_data())
             {
                 bno08x_accel_t ang_accel = imu.rpt.accelerometer.get();
-                // write to buf
-                size_t len = strlen(buf);
-                if ((buf_ret = snprintf(buf + len, sizeof(buf) - len, "Angular Accel: (x: %.2f y: %.2f z: %.2f)[m/s^2]\n", ang_accel.x, ang_accel.y, ang_accel.z)) < 0) {
-                    ESP_LOGE(TAG, "Failed to write to buffer");
-                }
                 // ESP_LOGW(TAG, "Angular Accel: (x: %.2f y: %.2f z: %.2f)[m/s^2]", ang_accel.x, ang_accel.y, ang_accel.z);
+                angx = ang_accel.x;
+                angy = ang_accel.y;
+                angz = ang_accel.z;
             }
             // Get calibrated magnetic field
             if (imu.rpt.cal_magnetometer.has_new_data())
             {
                 bno08x_magf_t mag_data = imu.rpt.cal_magnetometer.get();
-                // write to buf
-                size_t len = strlen(buf);
-                if ((buf_ret = snprintf(buf + len, sizeof(buf) - len, "Mag Field: (magx: %.2f magy: %.2f magz: %.2f)[T]\n", mag_data.x, mag_data.y, mag_data.z)) < 0) {
-                    ESP_LOGE(TAG, "Failed to write to buffer");
-                }
                 // ESP_LOGI(TAG, "Mag Field: (magx: %.2f magy: %.2f magz: %.2f)[T]", mag_data.x, mag_data.y, mag_data.z);
+                magx = mag_data.x;
+                magy = mag_data.y;
+                magz = mag_data.z;
             }
         }
         else 
@@ -98,9 +101,24 @@ void imu_loop(void *pvParameter)
             ESP_LOGI(TAG, "No data available");
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-        // add to text file 
-        strcat(buf, "hello world\n");
+        // write to buf
+        gyro_data_to_buf(roll);
+        gyro_data_to_buf(yaw);
+        gyro_data_to_buf(pitch);
+        data_to_buf(linx);
+        data_to_buf(liny);
+        data_to_buf(linz);
+        data_to_buf(angx);
+        data_to_buf(angy);
+        data_to_buf(angz);
+        data_to_buf(magx);
+        data_to_buf(magy);
+        data_to_buf(magz);
+        size_t len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "\n")) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+        // write from buf to data file
         imu_buf_to_text();
     }
 }
@@ -137,21 +155,87 @@ void imu_buf_to_text() {
         fwrite(buf, 1, strlen(buf), f);  // write the buffer
         fclose(f);
         ESP_LOGI("FILE", "Data written to file");
-
     }   
+}
 
-    // read into terminal
-    // f = fopen("/storage/IMU_data.txt", "r");
-    // if (f == NULL) {
-    //     ESP_LOGE("FILE", "Failed to open file for reading");
-    // } else {
-    //     ESP_LOGI("FILE", "Reading file contents:");
-    //     char line[128];
-    //     while (fgets(line, sizeof(line), f)) {
-    //         printf("%s", line);  // or use ESP_LOGI if you prefer
-    //     }
-    //     fclose(f);
-    // }
+// converts time in ms to seconds and ms and writes these to the buffer
+void time_to_buf(int64_t time_ms) {
+    int32_t sec = time_ms / 1000;
+    int32_t ms = time_ms % 1000;
+    // write to buf
+    size_t len = strlen(imu_buf);
+    // writing seconds
+    if (sec < 10) { // want to write 00x seconds
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "00%ld", sec)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (sec >= 10 && sec < 100) { // want to write 0xx seconds
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0%ld", sec)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else { // xxx seconds
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%ld", sec)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
 
-    // esp_vfs_spiffs_unregister(NULL);
+    // writing ms
+    if (ms < 10) { // want to write 00x ms
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "00%ld", ms)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (ms >= 10 && ms < 100) { // want to write 0xx ms
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0%ld", ms)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else { // xxx ms
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%ld", ms)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+}
+
+void gyro_data_to_buf(float data) {
+    size_t len = strlen(imu_buf);
+    if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%f", data)) < 0) {
+        ESP_LOGE(TAG, "Failed to write to buffer");
+    }
+}
+
+void data_to_buf(float data) {
+    float abs_data = fabs(data);
+    size_t len;
+    if (data < 0) { // negative sign
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "-")) < 0) {
+                    ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    if (abs_data < 10) { // 0x.xx
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0%.2f", abs_data)) < 0) {
+                    ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (abs_data >= 100) { // shouldn't be, but just in case we want to signal error and not mess up formatting
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVMAX")) < 0) {
+                    ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (abs_data >= 10 && abs_data < 100) {
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%.2f", abs_data)) < 0) {
+                    ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
 }

@@ -43,7 +43,7 @@ extern "C" void app_main(void)
     state.led_enabled = false;
     state.radio_enabled = false;
     state.wifi_enabled = true;
-    state.encoder_enabled = false;
+    state.encoder_enabled = true;
     state.imu_enabled = true;
 
     // mount spiffs
@@ -61,7 +61,7 @@ extern "C" void app_main(void)
 
     // Initialising peripherals
     initialise(state);
-    //test_drive_code();
+    test_drive_code();
     
     // loop forever to keep spiffs mounted
     while (1) {

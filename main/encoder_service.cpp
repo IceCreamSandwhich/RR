@@ -78,9 +78,23 @@ void encoder_task(void* pvParameter)
     (void)pvParameter; //pvparameter is not being used. Cast to void to match definition in header
     while(1)
     {
-        ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-        ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
+        // ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+
+        // clear buf
+        enc_buf[0] = '\0';
+        enc_time_ms = esp_timer_get_time() / 1000;
+        // int32_t seconds = enc_time_ms / 1000;
+        // int32_t milliseconds = enc_time_ms % 1000;
+        // Get timestamp
+        // ESP_LOGI(TAG, "Time: %lld", time_ms);
+        size_t len = strlen(enc_buf);
+        // time(ms),Lenc,Renc
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "%lld,%f,%f\n", enc_time_ms, ((float)(right_encoder.position) / CPR), ((float)(left_encoder.position) / CPR))) < 0) {
+                ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+        enc_buf_to_text();
+        vTaskDelay(200 / portTICK_PERIOD_MS);
     }
 }
 
