@@ -7,7 +7,7 @@
 #define FULL_STOP 0
 #define DRIVE_SPEED 512  // 50% speed
 #define TURN_SPEED 384   // 37.5% speed for smoother turns
-#defin do_autonomy false //flag for toogling when you should do autonomous task or not
+#define do_autonomy false //flag for toogling when you should do autonomous task or not
 
 
 void process_drive_command(int command) 
@@ -50,22 +50,20 @@ void process_drive_command(int command)
 }
 
 
-Void autonomous_task()
-{
-    /*
-    Ideas for autonomous code:
+// void autonomous_task()
+// {
+//     /*
+//     Ideas for autonomous code:
 
-    Use the stop button to toogle a flag back and forth that starts autonomous taks
+//     Use the stop button to toogle a flag back and forth that starts autonomous taks
 
-    while(falge = true){
-        do autonomous taks     
-    }
+//     while(falge = true){
+//         do autonomous taks     
+//     }
 
-    so when you press stop, it stops the autonomous task 
-    */
+//     so when you press stop, it stops the autonomous task 
+//     */
+//     speed_callback(512, 512);  // Move both motors forward
+//     vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-    ESP_LOGI(TAG, "Moving forward");
-    speed_callback(-512, -512);  // Move both motors forward
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-}
+// }
