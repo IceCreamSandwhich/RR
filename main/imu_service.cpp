@@ -7,6 +7,7 @@
 #include "esp_log.h"
 #include <string.h>
 #include <math.h>
+#include "esp_timer.h"
 
 
 static BNO08x imu;
@@ -48,8 +49,8 @@ void imu_loop(void *pvParameter)
         // clear buf 
         imu_buf[0] = '\0';
         // get timestamp
-        imu_time_ms = esp_timer_get_time() / 1000;
-        time_to_buf(imu_time_ms);
+        int64_t imu_time_ms = esp_timer_get_time() / 1000;
+        imu_time_to_buf(imu_time_ms);
         // block until new report is detected
         if (imu.data_available())
         {
@@ -152,31 +153,37 @@ void imu_buf_to_text() {
     ESP_LOGE("FILE", "Failed to open file for writing");
     } 
     else {
-        fwrite(buf, 1, strlen(buf), f);  // write the buffer
+        fwrite(imu_buf, 1, strlen(imu_buf), f);  // write the buffer
         fclose(f);
         ESP_LOGI("FILE", "Data written to file");
     }   
 }
 
 // converts time in ms to seconds and ms and writes these to the buffer
-void time_to_buf(int64_t time_ms) {
+void imu_time_to_buf(int64_t time_ms) {
     int32_t sec = time_ms / 1000;
     int32_t ms = time_ms % 1000;
     // write to buf
     size_t len = strlen(imu_buf);
     // writing seconds
-    if (sec < 10) { // want to write 00x seconds
+    if (sec < 10) { // want to write 000x seconds
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "000%ld", sec)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (sec >= 10 && sec < 100) { // want to write 00xx seconds
+        len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "00%ld", sec)) < 0) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    else if (sec >= 10 && sec < 100) { // want to write 0xx seconds
+    else if (sec >= 100 && sec < 1000) { // want to write 0xxx seconds
         len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0%ld", sec)) < 0) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    else { // xxx seconds
+    else { // xxxx seconds
         len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%ld", sec)) < 0) {
             ESP_LOGE(TAG, "Failed to write to buffer");
@@ -205,9 +212,21 @@ void time_to_buf(int64_t time_ms) {
 }
 
 void gyro_data_to_buf(float data) {
+    float abs_data = fabs(data);
     size_t len = strlen(imu_buf);
-    if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%f", data)) < 0) {
-        ESP_LOGE(TAG, "Failed to write to buffer");
+    if (data < 0) { // negative
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0")) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else { // positive
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "1")) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    len = strlen(imu_buf);
+    if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%f", abs_data)) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
     }
 }
 
@@ -216,7 +235,13 @@ void data_to_buf(float data) {
     size_t len;
     if (data < 0) { // negative sign
         len = strlen(imu_buf);
-        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "-")) < 0) {
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0")) < 0) {
+                    ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else {
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "1")) < 0) {
                     ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
@@ -228,7 +253,7 @@ void data_to_buf(float data) {
     }
     else if (abs_data >= 100) { // shouldn't be, but just in case we want to signal error and not mess up formatting
         len = strlen(imu_buf);
-        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVMAX")) < 0) {
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVRMAX")) < 0) {
                     ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }

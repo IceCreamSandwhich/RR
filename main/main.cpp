@@ -28,7 +28,6 @@
 #include "include/webserver_service.h"
 
 static const char *TAG = "MAIN";
-// char buf[512];
 
 void initialise(rr_state_t state); 
 void test_drive_code();
@@ -61,7 +60,7 @@ extern "C" void app_main(void)
 
     // Initialising peripherals
     initialise(state);
-    test_drive_code();
+    // test_drive_code();
     
     // loop forever to keep spiffs mounted
     while (1) {

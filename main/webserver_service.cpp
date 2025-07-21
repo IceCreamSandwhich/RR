@@ -114,6 +114,44 @@ static const httpd_uri_t imu_uri = {
     .user_ctx  = NULL
 };
 
+// Handler for accessing encoder data page
+static esp_err_t encoder_handler(httpd_req_t *req)
+{
+    FILE *f = fopen("/storage/encoder_data.txt", "r");
+    if (!f) {
+        ESP_LOGE("HTTP", "Failed to open encoder_data.txt for reading");
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    char buf[256];
+    size_t chunksize;
+    httpd_resp_set_type(req, "text/plain");
+
+    // Optional: forces browser to download instead of view
+    // httpd_resp_set_hdr(req, "Content-Disposition", "attachment; filename=\"IMU_data.txt\"");
+
+    while ((chunksize = fread(buf, 1, sizeof(buf), f)) > 0) {
+        if (httpd_resp_send_chunk(req, buf, chunksize) != ESP_OK) {
+            fclose(f);
+            ESP_LOGE("HTTP", "Failed to send file chunk");
+            return ESP_FAIL;
+        }
+    }
+
+    fclose(f);
+    httpd_resp_send_chunk(req, NULL, 0); // End of response
+    return ESP_OK;
+}
+
+// Register URI for encoder data
+static const httpd_uri_t encoder_uri = {
+    .uri       = "/encoder",         // Access it via http://<esp_ip>/imu
+    .method    = HTTP_GET,
+    .handler   = encoder_handler,
+    .user_ctx  = NULL
+};
+
 
 // WebSocket handler that echoes messages and supports async trigger
 static esp_err_t echo_handler(httpd_req_t *req)
@@ -191,6 +229,8 @@ httpd_handle_t start_webserver(void)
         httpd_register_uri_handler(server, &ws);
         httpd_register_uri_handler(server, &index_uri);  // Register the HTML handler
         httpd_register_uri_handler(server, &imu_uri);    // IMU file download
+        httpd_register_uri_handler(server, &encoder_uri);    // IMU file download
+
         return server;
     }
 
