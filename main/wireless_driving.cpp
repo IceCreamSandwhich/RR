@@ -1,7 +1,8 @@
 #include "include/drivetrain.hpp"
 #include "include/wireless_driving.h"
 #include "esp_log.h"
-
+#include <stdio.h>
+#include <stdbool.h>
 
 // Motor speed definitions (10-bit PWM: 0-1023)
 #define FULL_STOP 0
@@ -9,6 +10,7 @@
 #define TURN_SPEED 384   // 37.5% speed for smoother turns
 bool do_autonomy = false; // Flag for toogling when you should do autonomous task or not
 
+void autonomous_task();
 
 void process_drive_command(int command) 
 {
@@ -46,7 +48,8 @@ void process_drive_command(int command)
 
         case 9: // Autonomous driving Mode
             do_autonomy = !do_autonomy;
-            //autonomous_task();
+            printf("the value of the flag is: %d\n", do_autonomy);
+            autonomous_task();
             break;
             
         default:
@@ -56,20 +59,32 @@ void process_drive_command(int command)
 }
 
 
-// void autonomous_task()
-// {
+void autonomous_task()
+{
 //     /*
 //     Ideas for autonomous code:
 
 //     Use the buttons to toogle a flag back and forth that starts autonomous tak
 
-//     while do_autonomy
+//     if do_autonomy:
     // {
 //         do autonomous taks
            //speed_callback(512, 512);  // Move both motors forward
 //     }
 
+        //else:
+            //stop
 //     so when you press it agin, it stops the autonomous task 
 //     */
 //     
-// }
+    if (do_autonomy)
+    {
+        printf("Starting autonomous task");
+
+    }
+    
+    else
+    {
+        printf("Ending autonomous task");
+    }
+}
