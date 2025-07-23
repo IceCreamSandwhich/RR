@@ -1,90 +1,80 @@
 #include "include/drivetrain.hpp"
 #include "include/wireless_driving.h"
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 #include <stdio.h>
 #include <stdbool.h>
 
-// Motor speed definitions (10-bit PWM: 0-1023)
+// Motor speed definitions
 #define FULL_STOP 0
-#define DRIVE_SPEED 512  // 50% speed
-#define TURN_SPEED 384   // 37.5% speed for smoother turns
-bool do_autonomy = false; // Flag for toogling when you should do autonomous task or not
+#define DRIVE_SPEED 512
+#define TURN_SPEED 384
 
-void autonomous_task();
+bool autonomous_mode = false; // Tracks if autonomous mode is active
 
-void process_drive_command(int command) 
-{
-    /* 
-     * Converts website button commands to motor movements:
-     * Command Mapping:
-     * 0 = Stop
-     * 1 = Forward
-     * 2 = Backward
-     * 4 = Left 
-     * 8 = Right
-     * 9 = Autonomous mode
-     */
+void autonomous_control_loop(void *pvParameters) {
+    while (autonomous_mode) {
+        esp_task_wdt_reset(); // Prevent watchdog timeout
+        
+        // Control logic 
+        speed_callback(DRIVE_SPEED, DRIVE_SPEED);
+        
+        vTaskDelay(100 / portTICK_PERIOD_MS); // Yield to other tasks
+    }
+    
+    // Cleanup before exit
+    speed_callback(FULL_STOP, FULL_STOP);
+    vTaskDelete(NULL); // Self-terminate
+}
+
+void process_drive_command(int command) {
     switch(command) {
         case 0: // STOP
             speed_callback(FULL_STOP, FULL_STOP);
-            
             break;
             
-        case 1: // FORWARD (both motors forward)
-            speed_callback(DRIVE_SPEED, DRIVE_SPEED);
+        case 1: // FORWARD
+            if (!autonomous_mode) speed_callback(DRIVE_SPEED, DRIVE_SPEED);
             break;
             
-        case 2: // BACKWARD (both motors backward)
-            speed_callback(-DRIVE_SPEED, -DRIVE_SPEED);
+        case 2: // BACKWARD
+            if (!autonomous_mode) speed_callback(-DRIVE_SPEED, -DRIVE_SPEED);
             break;
             
-        case 4: // LEFT (left motor back, right motor forward)
-            speed_callback(-TURN_SPEED, TURN_SPEED);
+        case 4: // LEFT
+            if (!autonomous_mode) speed_callback(-TURN_SPEED, TURN_SPEED);
             break;
             
-        case 8: // RIGHT (right motor back, left motor forward)
-            speed_callback(TURN_SPEED, -TURN_SPEED);
+        case 8: // RIGHT
+            if (!autonomous_mode) speed_callback(TURN_SPEED, -TURN_SPEED);
             break;
 
-        case 9: // Autonomous driving Mode
-            do_autonomy = !do_autonomy;
-            printf("the value of the flag is: %d\n", do_autonomy);
-            autonomous_task();
+        static TaskHandle_t autonomous_task_handle = NULL;
+
+        case 9: // Toggle autonomous mode
+            autonomous_mode = !autonomous_mode;
+            if (autonomous_mode) {
+                xTaskCreate(
+                    autonomous_control_loop,
+                    "autonomous_task",
+                    4096,  
+                    NULL,
+                    4,     // Medium priority (below WiFi/imu/encoder)
+                    &autonomous_task_handle  // Store handle
+                );
+            } else {
+                speed_callback(FULL_STOP, FULL_STOP);
+                
+                // Delete task if running
+                if (autonomous_task_handle != NULL) {
+                    vTaskDelete(autonomous_task_handle);
+                    autonomous_task_handle = NULL;
+                }
+            }
             break;
-            
+                    
         default:
-            speed_callback(FULL_STOP, FULL_STOP); // Safety stop
+            speed_callback(FULL_STOP, FULL_STOP);
             break;
-    }
-}
-
-
-void autonomous_task()
-{
-//     /*
-//     Ideas for autonomous code:
-
-//     Use the buttons to toogle a flag back and forth that starts autonomous tak
-
-//     if do_autonomy:
-    // {
-//         do autonomous taks
-           //speed_callback(512, 512);  // Move both motors forward
-//     }
-
-        //else:
-            //stop
-//     so when you press it agin, it stops the autonomous task 
-//     */
-//     
-    if (do_autonomy)
-    {
-        printf("Starting autonomous task");
-
-    }
-    
-    else
-    {
-        printf("Ending autonomous task");
     }
 }

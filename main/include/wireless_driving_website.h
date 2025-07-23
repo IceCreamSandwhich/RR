@@ -7,15 +7,7 @@ const char *HTML_CONTENT = R"=====(
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=1, user-scalable=no">
 <title>Robot Wireless Control</title>
-
-<style type="text/css">  
-
-/* 
-This Section of the code starting with style type="text/css" and ending with /style is css style code that is written
-to create the buttons on the RR page. Adjust the layout and style of the buttons as you see fit.
-*/
-
-
+<style type="text/css">
 body { 
     text-align: center; 
     font-family: Arial, sans-serif;
@@ -73,18 +65,21 @@ button {
   color: white;
   padding: 10px 20px;
 }
-
 .button_autonomous {
-  position: fixed;    /* Fixed positioning relative to viewport */
-  left: 20px;         /* 20px from left edge */
-  bottom: 20px;       /* 20px from bottom */
-  background-color: #9C27B0; /* Purple */
-  z-index: 100;       /* Ensure it stays above other elements */
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  background-color: #9C27B0;
+  z-index: 100;
 }
-  
 .active {
   filter: brightness(85%);
   transform: scale(0.98);
+}
+.active-mode {
+  box-shadow: 0 0 15px #9C27B0;
+  border: 2px solid white;
+  font-weight: bold;
 }
 #status-panel {
   background-color: white;
@@ -95,10 +90,9 @@ button {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 </style>
-
 </head>
-<body> 
-<h1>Robot Controller</h1> <!-- This is pure HTML defining the structure of the webpage. It includes buttons, headings, and containers that JavaScript will later interact with. -->
+<body>
+<h1>Rescue Roller Controller</h1>
 <div id="container">
   <button id="0" class="control-button button_stop">STOP</button>
   <button id="1" class="control-button button_forward">FORWARD</button>
@@ -112,12 +106,10 @@ button {
   <p>WebSocket Status: <span id="ws_state" style="font-weight:bold;">DISCONNECTED</span></p>
   <button id="wc_conn" class="button_connect" type="button">Connect to Robot</button>
   <p id="command-status">Current Command: None</p>
+  <p id="mode-status">Current Mode: Manual</p>
 </div>
 
 <script>
-/*Everything from here onwards is Javascript code that handles the functionality of the webpage and allows interactions 
-between the buttons on the page and the esp32 */
-
 // Command Constants
 const CMD_STOP     = 0;
 const CMD_FORWARD  = 1;
@@ -130,11 +122,13 @@ const CMD_AUTONOMOUS = 9;
 let ws = null;
 let isConnected = false;
 let activeCommand = CMD_STOP;
+let isAutonomousMode = false;
 let isTouchDevice = ('ontouchstart' in window);
 
 // Initialize the controller
+
 function init() {
-  // Set up event listeners based on device type
+  // Set up event listeners
   if (isTouchDevice) {
     setupTouchControls();
   } else {
@@ -142,10 +136,47 @@ function init() {
   }
   
   document.getElementById("wc_conn").addEventListener("click", connectWebSocket);
-
-  // Add keyboard controls
   document.addEventListener('keydown', handleKeyDown);
   document.addEventListener('keyup', handleKeyUp);
+  
+  // Initialize autonomous control
+  autonomous_control();
+}
+
+function autonomous_control() {
+  // Autonomous button handling
+  const autoButton = document.getElementById("9");
+  const container = document.getElementById("container");
+
+  const toggleAutonomousMode = (e) => {
+    e.preventDefault();
+    isAutonomousMode = !isAutonomousMode;
+    autoButton.classList.toggle("active-mode", isAutonomousMode);
+    document.getElementById("mode-status").textContent = 
+      `Current Mode: ${isAutonomousMode ? "Autonomous" : "Manual"}`;
+    sendCommand(CMD_AUTONOMOUS);
+    
+    if (!isAutonomousMode) {
+      sendCommand(CMD_STOP);
+    }
+  };
+
+  // Set up event listeners
+  autoButton.addEventListener("click", toggleAutonomousMode);
+  autoButton.addEventListener("touchstart", toggleAutonomousMode);
+
+  // Update container touch handler to exclude autonomous button
+  if (isTouchDevice) {
+    container.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (element && element.classList.contains('control-button') && element.id !== "9") {
+        element.classList.add('active');
+        sendCommand(element.id);
+      }
+    });
+  }
 }
 
 function setupTouchControls() {
@@ -154,7 +185,7 @@ function setupTouchControls() {
     e.preventDefault();
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (element && element.classList.contains('control-button')) {
+    if (element && element.classList.contains('control-button') && element.id != "9") {
       element.classList.add('active');
       sendCommand(element.id);
     }
@@ -165,31 +196,41 @@ function setupTouchControls() {
     document.querySelectorAll('.control-button').forEach(btn => {
       btn.classList.remove('active');
     });
-    sendCommand(CMD_STOP);
+    if (!isAutonomousMode) {
+      sendCommand(CMD_STOP);
+    }
   });
 }
 
 function setupMouseControls() {
   document.querySelectorAll('.control-button').forEach(button => {
+    if (button.id == "9") return; // Skip autonomous button
+    
     button.addEventListener('mousedown', () => {
-      button.classList.add('active');
-      sendCommand(button.id);
+      if (!isAutonomousMode) {
+        button.classList.add('active');
+        sendCommand(button.id);
+      }
     });
     
     button.addEventListener('mouseup', () => {
       button.classList.remove('active');
-      sendCommand(CMD_STOP);
+      if (!isAutonomousMode) {
+        sendCommand(CMD_STOP);
+      }
     });
     
     button.addEventListener('mouseleave', () => {
       button.classList.remove('active');
-      sendCommand(CMD_STOP);
+      if (!isAutonomousMode) {
+        sendCommand(CMD_STOP);
+      }
     });
   });
 }
 
 function handleKeyDown(e) {
-  if (!isConnected) return;
+  if (!isConnected || isAutonomousMode) return;
   
   switch(e.key) {
     case 'ArrowUp': case 'w': case 'W':
@@ -208,19 +249,17 @@ function handleKeyDown(e) {
       document.querySelector('.button_right').classList.add('active');
       sendCommand(CMD_RIGHT);
       break;
-    case ' ': // Spacebar for stop
+    case ' ': // Spacebar
       sendCommand(CMD_STOP);
       break;
-
-    case 'm': case 'M':  //'M' key (for "autonomous Mode")
-      document.querySelector('.button_autonomous').classList.add('active');
-      sendCommand(CMD_AUTONOMOUS);
+    case 'm': case 'M': // Toggle autonomous mode
+      document.getElementById("9").click(); // Autonomous button click
       break;
   }
 }
 
 function handleKeyUp(e) {
-  if (!isConnected) return;
+  if (!isConnected || isAutonomousMode) return;
   
   switch(e.key) {
     case 'ArrowUp': case 'w': case 'W':
@@ -235,13 +274,8 @@ function handleKeyUp(e) {
     case 'ArrowRight': case 'd': case 'D':
       document.querySelector('.button_right').classList.remove('active');
       break;
-    case 'm': case 'M':
-      document.querySelector('.button_autonomous').classList.remove('active');
-      sendCommand(CMD_STOP);
-      break;
   }
   
-  // Only send stop if no other keys are pressed
   if (!e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
     sendCommand(CMD_STOP);
   }
@@ -256,7 +290,7 @@ function connectWebSocket() {
   document.getElementById("ws_state").textContent = "CONNECTING...";
   document.getElementById("wc_conn").textContent = "Connecting...";
   
-  const host = window.location.host || "192.168.4.1"; // Default ESP32 AP IP
+  const host = window.location.host || "192.168.4.1";
   ws = new WebSocket("ws://" + host + "/ws");
   
   ws.onopen = function() {
@@ -269,9 +303,12 @@ function connectWebSocket() {
   
   ws.onclose = function() {
     isConnected = false;
+    isAutonomousMode = false;
     document.getElementById("ws_state").textContent = "DISCONNECTED";
     document.getElementById("ws_state").style.color = "red";
     document.getElementById("wc_conn").textContent = "Connect to Robot";
+    document.getElementById("9").classList.remove("active-mode");
+    document.getElementById("mode-status").textContent = "Current Mode: Manual";
     updateCommandStatus("Disconnected");
     ws = null;
   };
@@ -289,11 +326,14 @@ function connectWebSocket() {
 
 function sendCommand(cmd) {
   if (!isConnected) return;
+
+  // Block manual commands in autonomous mode (except stop and mode toggle)
+  if (isAutonomousMode && cmd != CMD_STOP && cmd != CMD_AUTONOMOUS) {
+    return;
+  }
   
   activeCommand = parseInt(cmd);
-  ws.send(cmd + "\r\n");
-  
-  // Update UI
+  ws.send(cmd.toString());
   updateCommandStatus(getCommandName(cmd));
 }
 
@@ -310,7 +350,7 @@ function getCommandName(cmd) {
     case CMD_BACKWARD: return "Backward";
     case CMD_LEFT: return "Left Turn";
     case CMD_RIGHT: return "Right Turn";
-    case CMD_AUTONOMOUS: return "Autonomous Mode";
+    case CMD_AUTONOMOUS: return isAutonomousMode ? "Autonomous ON" : "Autonomous OFF";
     default: return "Unknown";
   }
 }
@@ -318,7 +358,6 @@ function getCommandName(cmd) {
 // Initialize when page loads
 window.onload = init;
 </script>
-
 </body>
 </html>
 )=====";
