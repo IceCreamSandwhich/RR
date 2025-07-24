@@ -9,7 +9,7 @@ void imu_loop(void *pvParameter);
 BaseType_t imu_service(void);
 void launch_rr_os_service();
 void imu_buf_to_text();
-void imu_time_to_buf(int64_t time_ms);
+void imu_time_to_buf(int32_t time_ms);
 void gyro_data_to_buf(float data);
 void data_to_buf(float data);
 

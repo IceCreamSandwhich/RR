@@ -164,9 +164,15 @@ void enc_time_to_buf(int32_t time_ms) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    else { // xxxx seconds
+    else if (sec >= 1000 && sec < 10000) { // xxxx seconds
         len = strlen(enc_buf);
         if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "%ld", sec)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (sec >= 10000) { // xxxx seconds
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "OVER")) < 0) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
@@ -184,9 +190,15 @@ void enc_time_to_buf(int32_t time_ms) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    else { // xxx ms
+    else if (ms >= 100 && ms < 1000) { // xxx ms
         len = strlen(enc_buf);
         if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "%ld", ms)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (ms >= 1000) { // warning
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "OVR")) < 0) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }

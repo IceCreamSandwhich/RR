@@ -49,7 +49,7 @@ void imu_loop(void *pvParameter)
         // clear buf 
         imu_buf[0] = '\0';
         // get timestamp
-        int64_t imu_time_ms = esp_timer_get_time() / 1000;
+        int32_t imu_time_ms = (int32_t)(esp_timer_get_time() / 1000);
         imu_time_to_buf(imu_time_ms);
         // block until new report is detected
         if (imu.data_available())
@@ -160,7 +160,7 @@ void imu_buf_to_text() {
 }
 
 // converts time in ms to seconds and ms and writes these to the buffer
-void imu_time_to_buf(int64_t time_ms) {
+void imu_time_to_buf(int32_t time_ms) {
     int32_t sec = time_ms / 1000;
     int32_t ms = time_ms % 1000;
     // write to buf
@@ -183,9 +183,15 @@ void imu_time_to_buf(int64_t time_ms) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    else { // xxxx seconds
+    else if (sec >= 1000 && sec < 10000) { // xxxx seconds
         len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%ld", sec)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (sec >= 10000) { // warning
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVER")) < 0) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
@@ -203,9 +209,15 @@ void imu_time_to_buf(int64_t time_ms) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    else { // xxx ms
+    else if (ms >= 100 && ms < 1000) { // xxx ms
         len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%ld", ms)) < 0) {
+            ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (ms >= 1000) { // warning
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVR")) < 0) {
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
@@ -224,10 +236,19 @@ void gyro_data_to_buf(float data) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    len = strlen(imu_buf);
-    if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%f", abs_data)) < 0) {
+    if (abs_data <= 1) {
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%f", abs_data)) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
+        }
     }
+    else {
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVERMAXIM")) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+
 }
 
 void data_to_buf(float data) {
