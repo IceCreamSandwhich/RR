@@ -18,6 +18,12 @@ void autonomous_control_loop(void *pvParameters) {
         
         // Control logic 
         speed_callback(DRIVE_SPEED, DRIVE_SPEED);
+                // 2. Move forward at ~50% speed for 2 seconds
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+        // 4. Spin in place (left forward, right backward)
+        speed_callback(-(TURN_SPEED), (TURN_SPEED));
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
         
         vTaskDelay(100 / portTICK_PERIOD_MS); // Yield to other tasks
     }

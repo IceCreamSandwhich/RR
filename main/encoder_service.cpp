@@ -103,7 +103,7 @@ void encoder_task(void* pvParameter)
        // get timestamp
        int64_t enc_time_ms = esp_timer_get_time() / 1000;
        enc_time_to_buf(enc_time_ms);
-       enc_data_to_buf((float)(right_encoder.position / CPR));
+       enc_data_to_buf((float)(left_encoder.position / CPR));
        enc_data_to_buf((float)(right_encoder.position / CPR));
        size_t len = strlen(enc_buf);
        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "\n")) < 0) {

@@ -60,7 +60,7 @@ extern "C" void app_main(void)
 
     // Initialising peripherals
     initialise(state);
-    // test_drive_code();
+    //test_drive_code();
     
     // loop forever to keep spiffs mounted
     while (1) {
@@ -88,6 +88,13 @@ extern "C" void app_main(void)
     radio.setSpreadingFactor(12);
 }
 */
+
+void test_drive_code(){
+    while(1){
+        speed_callback(512, 512);
+    }
+    
+}
 
 void initialise(rr_state_t state)
 {
