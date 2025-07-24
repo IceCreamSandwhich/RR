@@ -29,5 +29,5 @@ void init_encoder(encoder_t* encoder);
 void encoder_task(void);
 BaseType_t encoder_service(void);
 void enc_buf_to_text();
-void enc_time_to_buf(int64_t time_ms);
-void enc_data_to_buf(float data);
+void enc_time_to_buf(int32_t time_ms);
+void enc_data_to_buf(int32_t data);

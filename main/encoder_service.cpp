@@ -94,17 +94,17 @@ void encoder_task(void* pvParameter)
    while(1)
    {
        vTaskDelay(1000 / portTICK_PERIOD_MS);
-       // ESP_LOGI("ENC", "Right Pos: %f", ((float)(right_encoder.position) / CPR));
-       // ESP_LOGI("ENC", "Left Pos: %f", ((float)(left_encoder.position) / CPR));
+       ESP_LOGI("ENC", "Right Pos: %ld", ((int32_t)(right_encoder.position) / CPR));
+       ESP_LOGI("ENC", "Left Pos: %ld", ((int32_t)(left_encoder.position) / CPR));
 
 
        // clear buf
        enc_buf[0] = '\0';
        // get timestamp
-       int64_t enc_time_ms = esp_timer_get_time() / 1000;
+       int32_t enc_time_ms = (int32_t) (esp_timer_get_time() / 1000);
        enc_time_to_buf(enc_time_ms);
-       enc_data_to_buf((float)(left_encoder.position / CPR));
-       enc_data_to_buf((float)(right_encoder.position / CPR));
+       enc_data_to_buf((int32_t)(right_encoder.position / CPR)); // revolutions 
+       enc_data_to_buf((int32_t)(right_encoder.position / CPR));
        size_t len = strlen(enc_buf);
        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "\n")) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
@@ -141,7 +141,7 @@ BaseType_t encoder_service(void)
 
 
 // converts time in ms to seconds and ms and writes these to the buffer
-void enc_time_to_buf(int64_t time_ms) {
+void enc_time_to_buf(int32_t time_ms) {
     int32_t sec = time_ms / 1000;
     int32_t ms = time_ms % 1000;
     // write to buf
@@ -192,8 +192,8 @@ void enc_time_to_buf(int64_t time_ms) {
     }
 }
 
-void enc_data_to_buf(float data) {
-    float abs_data = fabs(data);
+void enc_data_to_buf(int32_t data) {
+    int32_t abs_data = labs(data);
     size_t len = strlen(enc_buf);
     if (data < 0) { // negative
         if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "0")) < 0) {
@@ -205,9 +205,37 @@ void enc_data_to_buf(float data) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    len = strlen(enc_buf);
-    if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "%f", abs_data)) < 0) {
+
+    // record revolutions
+    if (abs_data < 10) {
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "000%ld", abs_data)) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (abs_data >= 10 && abs_data < 100) {
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "00%ld", abs_data)) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (abs_data >= 100 && abs_data < 1000) {
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "0%ld", abs_data)) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (abs_data >= 1000 && abs_data < 10000) {
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "%ld", abs_data)) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+    }
+    else if (abs_data >= 10000) {
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "OVER")) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
     }
 }
 
