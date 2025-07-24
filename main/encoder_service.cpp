@@ -94,8 +94,8 @@ void encoder_task(void* pvParameter)
    while(1)
    {
        vTaskDelay(1000 / portTICK_PERIOD_MS);
-       ESP_LOGI("ENC", "Right Pos: %ld", ((int32_t)(right_encoder.position) / CPR));
-       ESP_LOGI("ENC", "Left Pos: %ld", ((int32_t)(left_encoder.position) / CPR));
+    //    ESP_LOGI("ENC", "Right Pos: %ld", ((int32_t)(right_encoder.position) / CPR));
+    //    ESP_LOGI("ENC", "Left Pos: %ld", ((int32_t)(left_encoder.position) / CPR));
 
 
        // clear buf
@@ -104,7 +104,7 @@ void encoder_task(void* pvParameter)
        int32_t enc_time_ms = (int32_t) (esp_timer_get_time() / 1000);
        enc_time_to_buf(enc_time_ms);
        enc_data_to_buf((int32_t)(right_encoder.position / CPR)); // revolutions 
-       enc_data_to_buf((int32_t)(right_encoder.position / CPR));
+       enc_data_to_buf((int32_t)(left_encoder.position / CPR));
        size_t len = strlen(enc_buf);
        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "\n")) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
