@@ -11,6 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include "esp_timer.h"
+#include "include/wireless_driving.h"
 
 
 #define TAG "ENCODER_SERVICE"
@@ -39,22 +40,22 @@ void IRAM_ATTR encoder_isr_handler(void *arg)
    {
        if (encoder->lastEncoding == 0b01)
        {
-           encoder->position = encoder->position + 1 ;
+           encoder->position = encoder->position - 1 ; // changing these
        }
        else if (encoder->lastEncoding == 0b10)
        {
-           encoder->position = encoder->position - 1;
+           encoder->position = encoder->position + 1;
        }
    }
    else if (encoding == 0b11)
    {
        if (encoder->lastEncoding == 0b10)
        {
-           encoder->position = encoder->position + 1;
+           encoder->position = encoder->position - 1;
        }
        else if (encoder->lastEncoding == 0b01)
        {
-           encoder->position = encoder -> position - 1;
+           encoder->position = encoder -> position + 1;
        }
    }
 
@@ -93,9 +94,10 @@ void encoder_task(void* pvParameter)
    (void)pvParameter; //pvparameter is not being used. Cast to void to match definition in header
    while(1)
    {
-       vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //    ESP_LOGI("ENC", "Right Pos: %ld", ((int32_t)(right_encoder.position) / CPR));
-    //    ESP_LOGI("ENC", "Left Pos: %ld", ((int32_t)(left_encoder.position) / CPR));
+    //    vTaskDelay(1000 / portTICK_PERIOD_MS); // is this delay necessary?
+       // check to see what this data looks like
+    //    ESP_LOGI("ENC", "Right rotations: %.2f", ((float)(right_encoder.position) / CPR));
+    //    ESP_LOGI("ENC", "Left rotations: %.2f", ((float)(left_encoder.position) / CPR));
 
 
        // clear buf
@@ -103,14 +105,16 @@ void encoder_task(void* pvParameter)
        // get timestamp
        int32_t enc_time_ms = (int32_t) (esp_timer_get_time() / 1000);
        enc_time_to_buf(enc_time_ms);
-       enc_data_to_buf((int32_t)(right_encoder.position / CPR)); // revolutions 
-       enc_data_to_buf((int32_t)(left_encoder.position / CPR));
+       enc_data_to_buf((float)right_encoder.position / CPR); // revolutions 
+       enc_data_to_buf((float)left_encoder.position / CPR);
        size_t len = strlen(enc_buf);
        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "\n")) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
        }
-       enc_buf_to_text();
-       vTaskDelay(200 / portTICK_PERIOD_MS);
+       if (autonomous_mode) {
+            enc_buf_to_text();
+       }
+       vTaskDelay(100 / portTICK_PERIOD_MS);
    }
 }
 
@@ -204,9 +208,19 @@ void enc_time_to_buf(int32_t time_ms) {
     }
 }
 
-void enc_data_to_buf(int32_t data) {
-    int32_t abs_data = labs(data);
-    size_t len = strlen(enc_buf);
+void enc_data_to_buf(float data) {
+    float abs_data = fabs(data);
+    size_t len;
+
+    if (abs_data >= 10000) { // warning
+        len = strlen(enc_buf);
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "OVERMAXI")) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+        return;
+    }
+
+    len = strlen(enc_buf);
     if (data < 0) { // negative
         if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "0")) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
@@ -221,31 +235,25 @@ void enc_data_to_buf(int32_t data) {
     // record revolutions
     if (abs_data < 10) {
         len = strlen(enc_buf);
-        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "000%ld", abs_data)) < 0) {
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "000%.2f", abs_data)) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
     else if (abs_data >= 10 && abs_data < 100) {
         len = strlen(enc_buf);
-        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "00%ld", abs_data)) < 0) {
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "00%.2f", abs_data)) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
     else if (abs_data >= 100 && abs_data < 1000) {
         len = strlen(enc_buf);
-        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "0%ld", abs_data)) < 0) {
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "0%.2f", abs_data)) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
     else if (abs_data >= 1000 && abs_data < 10000) {
         len = strlen(enc_buf);
-        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "%ld", abs_data)) < 0) {
-               ESP_LOGE(TAG, "Failed to write to buffer");
-        }
-    }
-    else if (abs_data >= 10000) {
-        len = strlen(enc_buf);
-        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "OVER")) < 0) {
+        if ((enc_buf_ret = snprintf(enc_buf + len, sizeof(enc_buf) - len, "%.2f", abs_data)) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }

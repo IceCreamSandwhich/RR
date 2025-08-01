@@ -8,6 +8,8 @@
 #include <string.h>
 #include <math.h>
 #include "esp_timer.h"
+#include "include/wireless_driving.h"
+
 
 
 static BNO08x imu;
@@ -120,7 +122,9 @@ void imu_loop(void *pvParameter)
             ESP_LOGE(TAG, "Failed to write to buffer");
         }
         // write from buf to data file
-        imu_buf_to_text();
+        if (autonomous_mode) {
+            imu_buf_to_text();
+        }
     }
 }
 
@@ -225,35 +229,51 @@ void imu_time_to_buf(int32_t time_ms) {
 
 void gyro_data_to_buf(float data) {
     float abs_data = fabs(data);
-    size_t len = strlen(imu_buf);
+    size_t len;
+    if (abs_data > 1) { // warning
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVERMAXIM")) < 0) {
+               ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+        // for debugging
+        // len = strlen(imu_buf);
+        // if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%f", abs_data)) < 0) {
+        //        ESP_LOGE(TAG, "Failed to write to buffer");
+        // }
+        return;
+    }
     if (data < 0) { // negative
+        len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0")) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
     else { // positive
+        len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "1")) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    if (abs_data <= 1) {
+    if (abs_data <= 1) { 
         len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "%f", abs_data)) < 0) {
                ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }
-    else {
-        len = strlen(imu_buf);
-        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVERMAXIM")) < 0) {
-               ESP_LOGE(TAG, "Failed to write to buffer");
-        }
-    }
-
 }
 
 void data_to_buf(float data) {
     float abs_data = fabs(data);
     size_t len;
+
+    if (abs_data >= 100) { // shouldn't be, but just in case we want to signal error and not mess up formatting
+        len = strlen(imu_buf);
+        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVRMAX")) < 0) {
+                    ESP_LOGE(TAG, "Failed to write to buffer");
+        }
+        return;
+    }
+
     if (data < 0) { // negative sign
         len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0")) < 0) {
@@ -269,12 +289,6 @@ void data_to_buf(float data) {
     if (abs_data < 10) { // 0x.xx
         len = strlen(imu_buf);
         if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "0%.2f", abs_data)) < 0) {
-                    ESP_LOGE(TAG, "Failed to write to buffer");
-        }
-    }
-    else if (abs_data >= 100) { // shouldn't be, but just in case we want to signal error and not mess up formatting
-        len = strlen(imu_buf);
-        if ((imu_buf_ret = snprintf(imu_buf + len, sizeof(imu_buf) - len, "OVRMAX")) < 0) {
                     ESP_LOGE(TAG, "Failed to write to buffer");
         }
     }

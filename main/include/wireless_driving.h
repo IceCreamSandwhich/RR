@@ -5,8 +5,8 @@
 
 // Motor speed definitions (10-bit PWM: 0-1023)
 #define FULL_STOP 0
-#define DRIVE_SPEED 512  // 50% speed
-#define TURN_SPEED 384   // 37.5% speed for smoother turns
+#define DRIVE_SPEED 716  // 50% speed
+#define TURN_SPEED 537   // 37.5% speed for smoother turns
 
 // Command mappings
 #define CMD_STOP     0
@@ -14,6 +14,8 @@
 #define CMD_BACKWARD 2
 #define CMD_LEFT     4
 #define CMD_RIGHT    8
+
+extern bool autonomous_mode;
 
 /**
  * @brief Processes driving commands from webpage WebSocket and controls motors

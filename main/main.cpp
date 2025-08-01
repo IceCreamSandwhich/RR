@@ -26,6 +26,7 @@
 #include "include/events.h"
 #include "include/wifi_service.h"
 #include "include/webserver_service.h"
+#include "include/wireless_driving.h"
 
 static const char *TAG = "MAIN";
 
