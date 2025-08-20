@@ -1,6 +1,7 @@
-//Websocket Code to work with websites for RR (WirelessControl and the website to grab data)
+//Websocket Code to work with websites for Wireless_driving and data website
 #include "include/webserver_service.h"
-#include "include/wirelessDrive_website.h"
+#include "include/wireless_driving_website.h"
+#include "include/wireless_driving.h"
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_log.h>
@@ -59,7 +60,7 @@ esp_err_t trigger_async_send(httpd_handle_t handle, httpd_req_t *req)
     return ret;
 }
 
-// Handler for accessing wireless driving webpage 
+// Handler for accessing wireless_driving webpage 
 static esp_err_t index_get_handler(httpd_req_t *req)
 {
     // httpd_resp_set_type(req, "text/html");
@@ -74,7 +75,6 @@ static const httpd_uri_t index_uri = {
     .user_ctx  = NULL
 };
 
-// Handler for accessing IMU data page
 static esp_err_t imu_handler(httpd_req_t *req)
 {
     FILE *f = fopen("/storage/IMU_data.txt", "r");
@@ -104,6 +104,7 @@ static esp_err_t imu_handler(httpd_req_t *req)
     return ESP_OK;
     
 }
+
 
 // Register URI for imu_data
 static const httpd_uri_t imu_uri = {
@@ -160,37 +161,38 @@ static esp_err_t echo_handler(httpd_req_t *req)
         return ESP_OK;
     }
 
-    // init frame to receive data (text)
     httpd_ws_frame_t ws_pkt;
     uint8_t *buf = NULL;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
 
-    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0); // check frame len
+    // Check frame length
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
 
     if (ws_pkt.len) {
-        buf = (uint8_t *)calloc(1, ws_pkt.len + 1); // memory to store incoming message + '\0'
+        buf = (uint8_t *)calloc(1, ws_pkt.len + 1);
         if (buf == NULL) {
             ESP_LOGE(TAG, "Failed to calloc memory for buf");
             return ESP_ERR_NO_MEM;
         }
 
         ws_pkt.payload = buf;
-        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len); // read frame data into buf
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
             free(buf);
             return ret;
         }
 
-        ESP_LOGI(TAG, "Got command: %s", ws_pkt.payload); // print command
+        ESP_LOGI(TAG, "Received command: %s", ws_pkt.payload);
         
-        // Here you would process the command (0, 1, 2, 4, 8)
-        // and take appropriate action in your application
+        // Process the button press command for wireless_driving here:
+        int command = atoi((char*)ws_pkt.payload);
+        process_drive_command(command);
     }
 
     // Echo back the received command to client
@@ -227,7 +229,8 @@ httpd_handle_t start_webserver(void)
         httpd_register_uri_handler(server, &ws);
         httpd_register_uri_handler(server, &index_uri);  // Register the HTML handler
         httpd_register_uri_handler(server, &imu_uri);    // IMU file download
-        httpd_register_uri_handler(server, &encoder_uri);    // encoder file download
+        httpd_register_uri_handler(server, &encoder_uri);    // IMU file download
+
         return server;
     }
 
@@ -270,5 +273,6 @@ void connect_handler(void *arg, esp_event_base_t event_base,
 void init_ws(void)
 {
     static httpd_handle_t server = NULL;
+    ESP_LOGI(TAG, "WebSocket connection attempt");
     server = start_webserver();
 }

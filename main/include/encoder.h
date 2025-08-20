@@ -15,7 +15,7 @@ typedef struct encoder_t {
 } encoder_t;
 
 #define LEFT_ENCODER_A GPIO_NUM_40 
-#define LEFT_ENCODER_B GPIO_NUM_41
+#define LEFT_ENCODER_B GPIO_NUM_41  
 
 #define RIGHT_ENCODER_A GPIO_NUM_4 
 #define RIGHT_ENCODER_B GPIO_NUM_42 
@@ -29,3 +29,5 @@ void init_encoder(encoder_t* encoder);
 void encoder_task(void);
 BaseType_t encoder_service(void);
 void enc_buf_to_text();
+void enc_time_to_buf(int32_t time_ms);
+void enc_data_to_buf(float data);
